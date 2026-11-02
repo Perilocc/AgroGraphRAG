@@ -1,0 +1,79 @@
+[
+    {
+        "name": "Produção Agrícola Brasil e Municipal",
+        "institution": "IBGE",
+        "type": "structured",
+        "format": "CSV",
+        "url": "https://sidra.ibge.gov.br/pesquisa/pam"
+    },
+    {
+        "name": "Milho Série Histórica 1A",
+        "institution": "CONAB",
+        "type": "structured",
+        "format": "XLS",
+        "url": "https://www.gov.br/conab/pt-br/atuacao/informacoes-agropecuarias/safras/series-historicas/graos/milho/milho1aseriehist.xls/view"
+    },
+    {
+        "name": "Milho Série Histórica 2A",
+        "institution": "CONAB",
+        "type": "structured",
+        "format": "XLS",
+        "url": "https://www.gov.br/conab/pt-br/atuacao/informacoes-agropecuarias/safras/series-historicas/graos/milho/milho2aseriehist.xls/view"
+    },
+    {
+        "name": "Milho Série Histórica 3A",
+        "institution": "CONAB",
+        "type": "structured",
+        "format": "XLS",
+        "url": "https://www.gov.br/conab/pt-br/atuacao/informacoes-agropecuarias/safras/series-historicas/graos/milho/milho3aseriehist.xls/view"
+    },
+    {
+        "name": "Milho Série Histórica Total",
+        "institution": "CONAB",
+        "type": "structured",
+        "format": "XLS",
+        "url": "https://www.gov.br/conab/pt-br/atuacao/informacoes-agropecuarias/safras/series-historicas/graos/milho/milhototalseriehist.xls/view"
+    },
+    {
+        "name": "Soja Série Histórica",
+        "institution": "CONAB",
+        "type": "structured",
+        "format": "XLS",
+        "url": "https://www.gov.br/conab/pt-br/atuacao/informacoes-agropecuarias/safras/series-historicas/graos/soja/sojaseriehist.xls/view"
+    },
+    {
+        "name": "Estratégias de manejo da soja",
+        "institution": "Embrapa",
+        "type": "unstructured",
+        "format": "PDF",
+        "url": "https://www.infoteca.cnptia.embrapa.br/infoteca/handle/doc/1188597"
+    },
+    {
+        "name": "Monitoramento de pragas",
+        "institution": "Embrapa",
+        "type": "unstructured",
+        "format": "PDF",
+        "url": "https://www.infoteca.cnptia.embrapa.br/infoteca/handle/doc/1162267"
+    },
+    {
+        "name": "Técnicas de Produção de Soja",
+        "institution": "Embrapa",
+        "type": "unstructured",
+        "format": "PDF",
+        "url": "https://www.infoteca.cnptia.embrapa.br/infoteca/handle/doc/1139184"
+    },
+    {
+        "name": "Manejo de Pragas do Milho",
+        "institution": "Embrapa",
+        "type": "unstructured",
+        "format": "PDF",
+        "url": "https://www.infoteca.cnptia.embrapa.br/infoteca/handle/doc/872789"
+    },
+    {
+        "name": "Viabilidade e Manejo do Milho",
+        "institution": "Embrapa",
+        "type": "unstructured",
+        "format": "PDF",
+        "url": "https://www.infoteca.cnptia.embrapa.br/infoteca/handle/doc/490417"
+    }
+]
