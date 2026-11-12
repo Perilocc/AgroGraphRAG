@@ -8,13 +8,13 @@ CSV_PATH = Path(
 def test_ingest_sncr():
     result = ingest_sncr(
         CSV_PATH,
-        chunksize=1000,
-        batch_size=250,
-        max_records=10000,
+        chunksize=500,
+        batch_size=100,
+        max_records=40000,
     )
 
-    assert result["registros_lidos"] == 10000
-    assert result["blocos_processados"] == 10
+    assert result["registros_lidos"] == 40000
+    assert result["blocos_processados"] == 80
     assert result["entidades_processadas"] > 0
     assert result["relacionamentos_processados"] > 0
 
