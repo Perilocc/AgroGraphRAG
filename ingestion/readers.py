@@ -6,22 +6,14 @@ import re
 
 def normalize_pdf_text(text: str) -> str:
     """Realiza normalizações seguras no texto extraído."""
-
-    # Corrige palavras separadas por hífen no final da linha.
     text = re.sub(r"-\s*\n\s*", "", text)
-
-    # Reduz espaços e tabulações excessivos.
     text = re.sub(r"[ \t]{2,}", " ", text)
-
-    # Remove excesso de linhas vazias.
     text = re.sub(r"\n{3,}", "\n\n", text)
-
     return text.strip()
 
 
 def read_pdf(file_path: Path) -> list[dict]:
-    """Extrai o texto de cada página de um PDF usando PyMuPDF."""
-
+    """Extrai e normaliza o texto de cada página de um PDF usando PyMuPDF."""
     pages = []
 
     with fitz.open(file_path) as pdf:
@@ -47,7 +39,8 @@ def read_pdf(file_path: Path) -> list[dict]:
                 if lines:
                     blocks.append("\n".join(lines))
 
-            text = "\n\n".join(blocks).strip()
+            raw_text = "\n\n".join(blocks).strip()
+            text = normalize_pdf_text(raw_text) if raw_text else ""
 
             pages.append({
                 "page": index + 1,
