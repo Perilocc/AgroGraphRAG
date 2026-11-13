@@ -1,10 +1,17 @@
-from ingestion.sncr_pipeline import ingest_sncr
+import os
 from pathlib import Path
+import pytest
+from ingestion.sncr_pipeline import ingest_sncr
 
 CSV_PATH = Path(
     "data/structured/sncr/Imoveis_PB_01_11_2026.csv"
 )
 
+
+@pytest.mark.skipif(
+    not os.getenv("RUN_INTEGRATION_TESTS"),
+    reason="Teste de integração pesado ao vivo com Neo4j Aura (defina RUN_INTEGRATION_TESTS=1).",
+)
 def test_ingest_sncr():
     result = ingest_sncr(
         CSV_PATH,
