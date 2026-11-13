@@ -1,8 +1,11 @@
 import atexit
+import logging
 import os
 import threading
 import certifi
 from neo4j import GraphDatabase
+
+logging.getLogger("neo4j.notifications").setLevel(logging.ERROR)
 
 try:
     import truststore

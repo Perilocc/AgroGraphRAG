@@ -1,5 +1,6 @@
 import json
 import re
+import time
 from pathlib import Path
 from openai import OpenAI
 
@@ -8,6 +9,28 @@ from retrieval.kag_engine import answer_question
 from utils.config import OPENAI_API_KEY, OPENAI_JUDGE_MODEL
 
 client = OpenAI(api_key=OPENAI_API_KEY or "not-configured")
+
+
+def _call_with_cooldown(fn, *args, **kwargs):
+    """Executa chamada com espera progressiva (15s, 30s, 60s) para erros transitórios 429/503."""
+    cooldowns = (15, 30, 60)
+    for attempt in range(len(cooldowns) + 1):
+        try:
+            return fn(*args, **kwargs)
+        except Exception as exc:
+            err_text = f"{type(exc).__name__}: {exc}"
+            is_transient = any(
+                token in err_text for token in ("429", "RateLimit", "503")
+            )
+            if not is_transient or attempt >= len(cooldowns):
+                raise
+            wait_sec = cooldowns[attempt]
+            print(
+                f"Limite/instabilidade transitória ({type(exc).__name__}); "
+                f"aguardando {wait_sec}s antes de tentar novamente...",
+                flush=True,
+            )
+            time.sleep(wait_sec)
 
 QUESTIONS_PATH = Path(__file__).resolve().parent / "questions.json"
 REPORT_MD_PATH = Path(__file__).resolve().parent / "resultados_comparativos.md"
@@ -74,7 +97,8 @@ def judge_faithfulness(
     )
 
     try:
-        response = client.chat.completions.create(
+        response = _call_with_cooldown(
+            client.chat.completions.create,
             model=OPENAI_JUDGE_MODEL,
             temperature=0,
             response_format={"type": "json_object"},
@@ -104,17 +128,61 @@ def load_questions(path: Path = QUESTIONS_PATH) -> list[dict]:
         return json.load(handle)
 
 
+def _build_summary(records: list[dict], modes: tuple[str, ...]) -> dict:
+    summary = {}
+    for mode in modes:
+        mode_items = [
+            r["results"][mode]
+            for r in records
+            if mode in r.get("results", {})
+        ]
+        n = len(mode_items) or 1
+        avg_faith = sum(m["faithfulness"] for m in mode_items) / n
+        summary[mode] = {
+            "avg_faithfulness": round(avg_faith, 4),
+            "hallucination_rate": round(1.0 - avg_faith, 4),
+            "avg_entity_recall": round(
+                sum(m["entity_recall"] for m in mode_items) / n, 4
+            ),
+            "avg_citation_score": round(
+                sum(m["citation_score"] for m in mode_items) / n, 4
+            ),
+            "avg_confidence": round(
+                sum(m["confidence"] for m in mode_items) / n, 4
+            ),
+        }
+    return summary
+
+
 def run_benchmark(
     questions_path: Path = QUESTIONS_PATH,
     output_md: Path = REPORT_MD_PATH,
     output_json: Path = REPORT_JSON_PATH,
     modes: tuple[str, ...] = ("no_context", "vector", "hybrid"),
+    resume: bool = True,
 ) -> dict:
     """Executa o benchmark comparativo e exporta relatórios Markdown e JSON."""
     questions = load_questions(questions_path)
-    records = []
+    out_json_path = Path(output_json)
+    records_by_id: dict[str, dict] = {}
 
-    for item in questions:
+    if resume and out_json_path.exists():
+        try:
+            saved = json.loads(out_json_path.read_text(encoding="utf-8"))
+            for prev in saved.get("records", []):
+                if all(m in prev.get("results", {}) for m in modes):
+                    records_by_id[prev["id"]] = prev
+        except Exception:
+            records_by_id = {}
+
+    for idx, item in enumerate(questions, start=1):
+        if item["id"] in records_by_id:
+            print(
+                f"[{idx}/{len(questions)}] {item['id']} ({item['category']}) restaurada do checkpoint",
+                flush=True,
+            )
+            continue
+
         row = {
             "id": item["id"],
             "category": item["category"],
@@ -122,7 +190,7 @@ def run_benchmark(
             "results": {},
         }
         for mode in modes:
-            res = answer_question(item["question"], mode=mode)
+            res = _call_with_cooldown(answer_question, item["question"], mode=mode)
             judge = judge_faithfulness(
                 question=item["question"],
                 context_text=res.get("context_text", ""),
@@ -144,20 +212,29 @@ def run_benchmark(
                 "cypher_generated": res.get("cypher_generated", ""),
                 "rationale": judge["rationale"],
             }
-        records.append(row)
 
-    summary = {}
-    for mode in modes:
-        mode_items = [r["results"][mode] for r in records]
-        n = len(mode_items) or 1
-        avg_faith = sum(m["faithfulness"] for m in mode_items) / n
-        summary[mode] = {
-            "avg_faithfulness": round(avg_faith, 4),
-            "hallucination_rate": round(1.0 - avg_faith, 4),
-            "avg_entity_recall": round(sum(m["entity_recall"] for m in mode_items) / n, 4),
-            "avg_citation_score": round(sum(m["citation_score"] for m in mode_items) / n, 4),
-            "avg_confidence": round(sum(m["confidence"] for m in mode_items) / n, 4),
-        }
+        records_by_id[item["id"]] = row
+        checkpoint_records = [
+            records_by_id[q["id"]] for q in questions if q["id"] in records_by_id
+        ]
+        out_json_path.write_text(
+            json.dumps(
+                {
+                    "summary": _build_summary(checkpoint_records, modes),
+                    "records": checkpoint_records,
+                },
+                ensure_ascii=False,
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+        print(
+            f"[{idx}/{len(questions)}] {item['id']} ({item['category']}) concluída",
+            flush=True,
+        )
+
+    records = [records_by_id[q["id"]] for q in questions if q["id"] in records_by_id]
+    summary = _build_summary(records, modes)
 
     md_lines = [
         "# Benchmark Comparativo de Alucinação — AgroGraphRAG\n",

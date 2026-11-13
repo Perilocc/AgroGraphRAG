@@ -44,12 +44,15 @@ def search_similar_chunks(query_text: str, top_k: int = 5) -> list[dict]:
     driver = get_driver()
 
     with get_session(driver) as session:
-        result = session.run(
-            query,
-            top_k=top_k,
-            embedding=embedding,
-        )
-        return [record.data() for record in result]
+        try:
+            result = session.run(
+                query,
+                top_k=top_k,
+                embedding=embedding,
+            )
+            return [record.data() for record in result]
+        except Exception:
+            return []
 
 
 def search_fulltext_chunks(query_text: str, top_k: int = 5) -> list[dict]:

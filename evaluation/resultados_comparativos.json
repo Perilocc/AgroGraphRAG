@@ -1,0 +1,507 @@
+{
+  "summary": {
+    "no_context": {
+      "avg_faithfulness": 0.1667,
+      "hallucination_rate": 0.8333,
+      "avg_entity_recall": 0.8194,
+      "avg_citation_score": 0.0,
+      "avg_confidence": 0.0
+    },
+    "vector": {
+      "avg_faithfulness": 1.0,
+      "hallucination_rate": 0.0,
+      "avg_entity_recall": 0.5694,
+      "avg_citation_score": 0.4167,
+      "avg_confidence": 0.4959
+    },
+    "hybrid": {
+      "avg_faithfulness": 1.0,
+      "hallucination_rate": 0.0,
+      "avg_entity_recall": 0.8333,
+      "avg_citation_score": 0.5833,
+      "avg_confidence": 0.6171
+    }
+  },
+  "records": [
+    {
+      "id": "Q01",
+      "category": "sncr",
+      "question": "Quais são os municípios da Paraíba com maior número de imóveis rurais cadastrados e área total na amostra do SNCR?",
+      "results": {
+        "no_context": {
+          "answer": "Com base nos dados oficiais do Sistema Nacional de Cadastro Rural (SNCR) do INCRA, os municípios da Paraíba que se destacam com o **maior número de imóveis rurais cadastrados** tendem a ser aqueles com maior extensão territorial e forte atividade agropecuária no interior do estado. \n\nOs principais municípios em número de cadastros e área total na amostra do SNCR são:\n\n1. **Princesa Isabel**\n2. **Itaporanga**\n3. **Patos**\n4. **Sousa**\n5. **Cajazeiras**\n6. **Catolé do Rocha**\n7. **Monteiro**\n\n*Nota:* Para obter os quantitativos exatos e atualizados (número de imóveis e hectares) por município para uma pesquisa específica, recomenda-se a consulta direta ao **Painel de Dados do INCRA** ou a emissão de um extrato estatístico atualizado junto à superintendência regional do órgão (SR-18/Paraíba), uma vez que esses números sofrem atualizações constantes com novos cadastros, desmembramentos e retificações.",
+          "confidence": 0.0,
+          "entity_recall": 0.6667,
+          "faithfulness": 0.0,
+          "citation_score": 0.0,
+          "paths_count": 0,
+          "chunks_count": 0,
+          "cypher_generated": "",
+          "rationale": "Como o contexto é '[SEM CONTEXTO]', a listagem específica de municípios feita pela resposta constitui alucinação de dados fatoriais não fornecidos."
+        },
+        "vector": {
+          "answer": "Os trechos recuperados não respondem à pergunta. [Fonte: teste_agro.pdf, p. 1]",
+          "confidence": 0.4932,
+          "entity_recall": 0.0,
+          "faithfulness": 1.0,
+          "citation_score": 0.5,
+          "paths_count": 0,
+          "chunks_count": 1,
+          "cypher_generated": "",
+          "rationale": "O modelo respondeu honestamente que o contexto não contém a informação necessária para responder à pergunta, sem inventar dados."
+        },
+        "hybrid": {
+          "answer": "Com base nos dados fornecidos e de acordo com os Resultados da Consulta Cypher do SNCR para a Paraíba, os municípios com maior número de imóveis rurais cadastrados e área total são os seguintes:\n\n1. **PICUÍ**: 1.560 imóveis e 51.266,83 ha de área total.\n2. **CUITÉ**: 1.203 imóveis e 34.751,92 ha de área total.\n3. **CATOLÉ DO ROCHA**: 1.059 imóveis e 30.566,81 ha de área total.\n4. **ARAÇAGI**: 959 imóveis e 14.392,14 ha de área total.\n5. **RIACHO DOS CAVALOS**: 863 imóveis e 20.792,58 ha de área total.\n6. **BOM SUCESSO**: 785 imóveis e 13.527,21 ha de área total.\n7. **BARRA DE SANTA ROSA**: 768 imóveis e 37.755,81 ha de área total.\n8. **JERICÓ**: 725 imóveis e 18.137,32 ha de área total.\n9. **ALAGOA GRANDE**: 628 imóveis e 22.289,81 ha de área total.\n10. **CACIMBA DE DENTRO**: 625 imóveis e 8.597,08 ha de área total.\n\n**Relações e Fontes:**\n* Os dados refletem a relação estrutural no grafo: `[Municipio] <-[:LOCALIZADO_EM]- [ImovelRural]`.\n* **Aviso de Amostragem:** Informamos que os números de contagem de imóveis rurais e áreas do SNCR-PB refletem a amostra uniforme de 1/6 do SNCR-PB (~39,5 mil registros no Neo4j Aura).\n* Adicionalmente, o contexto menciona a cultura do milho [Fonte: teste_agro.pdf, p. 1], embora não haja informações sobre pragas, defensivos ou recomendações adicionais nas fontes fornecidas para esta pergunta.",
+          "confidence": 0.9,
+          "entity_recall": 1.0,
+          "faithfulness": 1.0,
+          "citation_score": 0.5,
+          "paths_count": 0,
+          "chunks_count": 1,
+          "cypher_generated": "MATCH (m:Municipio)<-[:LOCALIZADO_EM]-(i:ImovelRural) WHERE m.uf = 'PB' RETURN m.nome AS Municipio, count(i) AS Total_Imoveis, sum(i.area_total) AS Area_Total_Ha ORDER BY Total_Imoveis DESC LIMIT 10",
+          "rationale": "Todos os municípios, contagens de imóveis e áreas totais citados na resposta estão estritamente embasados no resultado da consulta Cypher fornecida no contexto. As menções adicionais sobre a amostra e a estrutura do grafo também refletem fielmente as informações do contexto."
+        }
+      }
+    },
+    {
+      "id": "Q02",
+      "category": "sncr",
+      "question": "Qual é a distribuição das condições de detenção de imóveis rurais cadastrados na Paraíba segundo o SNCR?",
+      "results": {
+        "no_context": {
+          "answer": "Segundo os dados do Sistema Nacional de Cadastro Rural (SNCR) gerenciado pelo Incra, a distribuição das condições de detenção (formas de posse) dos imóveis rurais cadastrados na Paraíba concentra-se predominantemente na condição de **Propriedade**, seguida por formas de **Posse** (posse mansa e pacífica, ocupação, etc.) e outras situações menores como arrendamento e parceria.\n\nEm termos percentuais históricos e gerais consolidados pelo Incra para o estado:\n*   **Proprietários:** Representam a esmagadora maioria dos imóveis cadastrados (geralmente acima de **75% a 80%** do total).\n*   **Não Proprietários (Posseiros, Arrendatários, Parceiros, Ocupantes):** Comandam o restante (cerca de **20% a 25%**), sendo a categoria de **posse** a mais expressiva dentro desse grupo.\n\n*Nota: Para dados estatísticos exatos e atualizados em tempo real, recomenda-se a consulta direta ao Painel de Cadastros de Imóveis Rurais do Incra (Sefic/SNCR).*",
+          "confidence": 0.0,
+          "entity_recall": 1.0,
+          "faithfulness": 0.0,
+          "citation_score": 0.0,
+          "paths_count": 0,
+          "chunks_count": 0,
+          "cypher_generated": "",
+          "rationale": "Como o contexto fornecido é '[SEM CONTEXTO]', o modelo gerou dados estatísticos específicos, percentuais e descrições detalhadas baseados em conhecimento prévio externo, o que viola a regra de fidelidade factual para RAG/GraphRAG."
+        },
+        "vector": {
+          "answer": "Os trechos recuperados não respondem à pergunta.",
+          "confidence": 0.4991,
+          "entity_recall": 0.0,
+          "faithfulness": 1.0,
+          "citation_score": 0.0,
+          "paths_count": 0,
+          "chunks_count": 1,
+          "cypher_generated": "",
+          "rationale": "A resposta gerada afirmou corretamente que o contexto não contém a informação para responder à pergunta, sem inventar dados."
+        },
+        "hybrid": {
+          "answer": "Com base nos dados fornecidos e estritamente limitados a eles, a distribuição das condições de detenção de imóveis rurais na Paraíba (segundo os resultados da consulta Cypher no SNCR) é a seguinte:\n\n* **Proprietario Ou Posseiro Individual**: 20.683 imóveis\n* **Proprietario Ou Posseiro Comum**: 3.209 imóveis\n* **Proprietario Ou Posseiro Associado**: 38 imóveis\n* **Usufrutuário**: 35 imóveis\n* **Nu-Proprietario**: 24 imóveis\n* **Concessionário**: 11 imóveis\n\n**Caminhos do Grafo utilizados:**\n* `[ImovelRural] --(POSSUI_DETENCAO)-> [RegistroDetencao]`\n\n**Fontes documentais utilizadas:**\n* [Fonte: teste_agro.pdf, p. 1]\n\n*Nota obrigatória:* Os números de imóveis rurais e áreas do SNCR-PB informados refletem a amostra uniforme de 1/6 do SNCR-PB (~39,5 mil registros no Neo4j Aura).",
+          "confidence": 0.9,
+          "entity_recall": 0.5,
+          "faithfulness": 1.0,
+          "citation_score": 0.5,
+          "paths_count": 0,
+          "chunks_count": 1,
+          "cypher_generated": "MATCH (i:ImovelRural)-[:POSSUI_DETENCAO]->(r:RegistroDetencao) RETURN r.condicao_pessoa AS condicao_detencao, count(i) AS total_imoveis ORDER BY total_imoveis DESC LIMIT 25",
+          "rationale": "A resposta utiliza exclusivamente os dados de condição de detenção presentes na consulta Cypher do contexto, refletindo com exatidão os valores informados."
+        }
+      }
+    },
+    {
+      "id": "Q03",
+      "category": "sncr",
+      "question": "Quais imóveis rurais de João Pessoa possuem registros de detenção cadastrados no SNCR e qual a sua área total na amostra?",
+      "results": {
+        "no_context": {
+          "answer": "Para fornecer essa informação com precisão, seria necessário o acesso direto à base de dados atualizada e restrita do Sistema Nacional de Cadastro Rural (SNCR), gerido pelo Incra. \n\nContudo, cumpre destacar dois pontos fundamentais sobre o tema:\n\n1. **Natureza Urbana de João Pessoa:** O município de João Pessoa (PB) possui a sua mancha territorial predominantemente urbana. Embora existam zonas de expansão ou periferias com características rurais, o volume de imóveis propriamente rurais cadastrados no SNCR no município é extremamente reduzido ou inexistente em termos de registros significativos de **detenção** (que tipicamente se referem à posse de terras públicas, e não a propriedades privadas registradas por CCIR).\n2. **Sigilo de Dados:** Dados específicos sobre detentores, matrículas e áreas exatas de cadastros no SNCR são protegidos pela Lei de Acesso à Informação (LAI) e pela Lei Geral de Proteção de Dados (LGPD), não sendo disponibilizados nominalmente em consultas públicas abertas.\n\nPara obter um levantamento oficial e exato dessa natureza, é necessário protocolar um pedido formal de acesso à informação diretamente junto à **Superintendência Regional do Incra na Paraíba**.",
+          "confidence": 0.0,
+          "entity_recall": 0.5,
+          "faithfulness": 1.0,
+          "citation_score": 0.0,
+          "paths_count": 0,
+          "chunks_count": 0,
+          "cypher_generated": "",
+          "rationale": "O modelo respondeu honestamente que o contexto não foi fornecido e que não possui dados específicos para responder à pergunta sobre os imóveis de João Pessoa, explicando corretamente os motivos institucionais e legais para a indisponibilidade, sem inventar dados, números ou fontes."
+        },
+        "vector": {
+          "answer": "Os trechos recuperados não respondem à pergunta sobre os imóveis rurais de João Pessoa com registros de detenção no SNCR e sua área total na amostra [Fonte: teste_agro.pdf, p. 1].",
+          "confidence": 0.4942,
+          "entity_recall": 1.0,
+          "faithfulness": 1.0,
+          "citation_score": 0.5,
+          "paths_count": 0,
+          "chunks_count": 1,
+          "cypher_generated": "",
+          "rationale": "A resposta reconhece corretamente que o contexto recuperado não contém a informação solicitada, sem inventar dados."
+        },
+        "hybrid": {
+          "answer": "Com base no contexto fornecido, para o município de **JOÃO PESSOA** (código IBGE: 2507507), a amostra uniforme de 1/6 do SNCR-PB (~39,5 mil registros no Neo4j Aura) apresenta os seguintes dados fundiários:\n\n- **Quantidade de imóveis (amostra):** 543 imóveis.\n- **Área total da amostra:** 8.013,32 hectares.\n\nFontes e caminhos utilizados:\n- Dados obtidos a partir dos Resultados Cypher do SNCR para o município de JOÃO PESSOA.\n- O contexto recuperado não contém informações detalhadas sobre registros específicos de detenção individualizados para os imóveis, nem trechos documentais adicionais sobre essa especificação (constando apenas a menção geral de que \"O milho é uma cultura agrícola importante\" [Fonte: teste_agro.pdf, p. 1]). \n\n*Nota: Conforme a regra obrigatória, ressalta-se que os números de imóveis rurais e áreas do SNCR-PB refletem a amostra uniforme de 1/6 do SNCR-PB (~39,5 mil registros no Neo4j Aura).*",
+          "confidence": 0.5224,
+          "entity_recall": 1.0,
+          "faithfulness": 1.0,
+          "citation_score": 0.5,
+          "paths_count": 0,
+          "chunks_count": 1,
+          "cypher_generated": "MATCH (i:ImovelRural)-[:LOCALIZADO_EM]->(m:Municipio), (i)-[:POSSUI_DETENCAO]->(rd:RegistroDetencao) WHERE m.nome_normalizado CONTAINS 'joao pessoa' RETURN i.codigo_sncr AS codigo_sncr, i.denominacao AS denominacao, i.area_total AS area_total LIMIT 25",
+          "rationale": "A resposta forneceu corretamente os dados da amostra para o município de João Pessoa (543 imóveis e 8013.32 hectares) conforme o contexto, e reconheceu honestamente que não há informações detalhadas sobre registros específicos de detenção para cada imóvel individual."
+        }
+      }
+    },
+    {
+      "id": "Q04",
+      "category": "ibge",
+      "question": "Quais municípios da Paraíba lideram a produção de milho em toneladas segundo os dados integrados do IBGE PAM?",
+      "results": {
+        "no_context": {
+          "answer": "Segundo os dados mais recentes da Produção Agrícola Municipal (PAM) do IBGE, os municípios que lideram a produção de milho (em grão) em toneladas no estado da Paraíba são, historicamente:\n\n1. **Prata**\n2. **Ouro Velho**\n3. **Monteiro**\n4. **Sumé**\n5. **São José dos Cordeiros**\n\nEstes municípios estão localizados principalmente na **região do Cariri Paraibano**, área que concentra a maior parte da produção estadual de milho, predominantemente voltada para a agricultura de sequeiro (dependente das chuvas) e integrada à cadeia da pecuária (produção de silagem e grãos para ração animal).",
+          "confidence": 0.0,
+          "entity_recall": 0.5,
+          "faithfulness": 0.0,
+          "citation_score": 0.0,
+          "paths_count": 0,
+          "chunks_count": 0,
+          "cypher_generated": "",
+          "rationale": "A resposta forneceu municípios específicos e detalhes regionais como líderes na produção de milho sem nenhum contexto fornecido ([SEM CONTEXTO]), constituindo alucinação de dados."
+        },
+        "vector": {
+          "answer": "Os trechos recuperados não respondem à pergunta, pois contêm apenas informações genéricas sobre a importância da cultura do milho e não mencionam municípios da Paraíba ou dados do IBGE PAM [Fonte: teste_agro.pdf, p. 1].",
+          "confidence": 0.4954,
+          "entity_recall": 0.5,
+          "faithfulness": 1.0,
+          "citation_score": 0.5,
+          "paths_count": 0,
+          "chunks_count": 1,
+          "cypher_generated": "",
+          "rationale": "A resposta identificou corretamente que o contexto recuperado não contém a informação solicitada e absteve-se de inventar dados."
+        },
+        "hybrid": {
+          "answer": "Com base nas fontes e no contexto fornecido, o contexto documental e os resultados do SNCR contêm apenas informações sobre a importância do milho (\"O milho é uma cultura agrícola importante\" [Fonte: teste_agro.pdf, p. 1]) e dados fundiários/amostrais de municípios específicos da Paraíba (Poço de José de Moura, Serra da Raiz, São Sebastião de Lagoa de Roça, Belém do Brejo do Cruz, Curral de Cima e Algodão de Jandaíra). \n\nOs dados do IBGE PAM sobre a **produção de milho em toneladas** não foram encontrados nas fontes fornecidas. Portanto, não é possível listar quais municípios lideram essa produção específica com base exclusivamente no contexto atual.",
+          "confidence": 0.5229,
+          "entity_recall": 0.5,
+          "faithfulness": 1.0,
+          "citation_score": 0.5,
+          "paths_count": 0,
+          "chunks_count": 1,
+          "cypher_generated": "MATCH (m:Municipio)-[p:PRODUZ]->(c:CulturaAgricola) WHERE m.uf = 'PB' AND toLower(c.nome) CONTAINS 'milho' RETURN m.nome AS Municipio, p.quantidade_ton AS Quantidade_Toneladas, p.ano AS Ano ORDER BY p.quantidade_ton DESC LIMIT 10",
+          "rationale": "A resposta identificou corretamente que o contexto recuperado não contém os dados do IBGE PAM sobre a produção de milho em toneladas, abstendo-se de inventar informações e relatando as limitações dos dados fornecidos com precisão."
+        }
+      }
+    },
+    {
+      "id": "Q05",
+      "category": "ibge",
+      "question": "Quais municípios da Paraíba possuem registros positivos de produção de soja ou café no IBGE?",
+      "results": {
+        "no_context": {
+          "answer": "Com base nos dados de produção agrícola municipal do IBGE (Produção Agrícola Municipal - PAM):\n\n1. **Soja:** **Não há registros** consistentes ou significativos de produção comercial de soja na Paraíba nos levantamentos regulares do IBGE. O cultivo da oleaginosa no estado é incipiente, experimental ou restrito a áreas muito pequenas que não figuram nas estatísticas oficiais de produção em larga escala.\n\n2. **Café:** A produção de café na Paraíba é extremamente marginal e esporádica. Historicamente, registros pontuais de pequena produção (geralmente café arábica ou canephora em escala familiar/artesanal) já apareceram em municípios da região serrana, como **Bananeiras** e **Alagoa Grande** (no Brejo Paraibano), mas sem constância nas estatísticas recentes de safra do IBGE. \n\n*Resumo:* Estatisticamente, **nenhum** município paraibano possui relevância ou registro consolidado de produção comercial regular de soja ou café no IBGE.",
+          "confidence": 0.0,
+          "entity_recall": 1.0,
+          "faithfulness": 1.0,
+          "citation_score": 0.0,
+          "paths_count": 0,
+          "chunks_count": 0,
+          "cypher_generated": "",
+          "rationale": "O sistema respondeu honestamente que não há registros consistentes no IBGE para soja e que a produção de café é marginal/esporádica sem constância recente, conforme esperado para o modo sem contexto quando a informação oficial não está presente."
+        },
+        "vector": {
+          "answer": "Os trechos recuperados não respondem à pergunta sobre quais municípios da Paraíba possuem registros positivos de produção de soja ou café no IBGE [Fonte: teste_agro.pdf, p. 1].",
+          "confidence": 0.4916,
+          "entity_recall": 1.0,
+          "faithfulness": 1.0,
+          "citation_score": 0.5,
+          "paths_count": 0,
+          "chunks_count": 1,
+          "cypher_generated": "",
+          "rationale": "A resposta reconhece corretamente que o contexto recuperado não contém a informação necessária para responder à pergunta, sem inventar dados."
+        },
+        "hybrid": {
+          "answer": "Com base no contexto fornecido, não há informações sobre municípios da Paraíba que possuam registros positivos de produção de soja ou café no IBGE. O contexto menciona apenas que \"O milho é uma cultura agrícola importante\" [Fonte: teste_agro.pdf, p. 1]. \n\nPortanto, a informação sobre soja ou café não foi encontrada nas fontes. \n\n*Nota sobre os dados do SNCR-PB presentes no contexto (que refletem a amostra uniforme de 1/6 do SNCR-PB, com cerca de 39,5 mil registros no Neo4j Aura):* os municípios listados no contexto são POÇO DE JOSÉ DE MOURA, SÃO SEBASTIÃO DE LAGOA DE ROÇA, SANTANA DE MANGUEIRA, ALGODÃO DE JANDAÍRA, CURRAL DE CIMA e LAGOA DE DENTRO, mas o resumo fundiário aborda apenas dados de imóveis e áreas totais em hectares, sem menção a culturas agrícolas do IBGE como soja ou café.",
+          "confidence": 0.5212,
+          "entity_recall": 1.0,
+          "faithfulness": 1.0,
+          "citation_score": 0.5,
+          "paths_count": 0,
+          "chunks_count": 1,
+          "cypher_generated": "MATCH (m:Municipio)-[p:PRODUZ]->(c:CulturaAgricola) WHERE (toLower(c.nome) CONTAINS 'soja' OR toLower(c.nome) CONTAINS 'cafe' OR toLower(c.nome) CONTAINS 'café') AND p.quantidade_ton > 0 RETURN DISTINCT m.nome AS municipio, c.nome AS cultura, p.quantidade_ton AS quantidade_toneladas, p.ano AS ano ORDER BY p.quantidade_ton DESC LIMIT 25",
+          "rationale": "O modelo respondeu honestamente que o contexto não contém a informação solicitada sobre soja ou café, sem inventar dados, e descreveu corretamente o conteúdo presente no contexto fornecido."
+        }
+      }
+    },
+    {
+      "id": "Q06",
+      "category": "ibge",
+      "question": "Qual é a área plantada e a quantidade produzida de milho nos principais municípios produtores da Paraíba?",
+      "results": {
+        "no_context": {
+          "answer": "De acordo com os dados mais recentes do Levantamento Sistemático da Produção Agrícola (LSPA) do IBGE, a produção de milho (grão) na Paraíba é predominantemente de agricultura de sequeiro, altamente sujeita às variações climáticas (clima semiárido). \n\nOs principais municípios produtores concentram-se nas regiões do Agreste e do Brejo paraibano. Os destaques em área plantada e quantidade produzida são:\n\n1. **Alagoa Grande**\n2. **Esperança**\n3. **Areia**\n4. **Remígio**\n5. **Serraria**\n\n**Panorama Geral do Estado:**\n* **Área plantada:** Varia significativamente entre anos de seca e de chuvas regulares, oscilando geralmente entre **120 mil e 180 mil hectares** no total do estado.\n* **Quantidade produzida:** A produção é bastante volátil devido à estiagem, variando tipicamente de **40 mil a 150 mil toneladas** anuais. A produtividade média estadual é baixa (frequentemente abaixo de 600 kg por hectare), exceto em pockets de melhor regime pluviométrico.\n\n*Nota: Para dados exatos e atualizados por safra municipal específica, recomenda-se consultar a tabela 1618 (Levantamento Sistemático da Produção Agrícola) do SIDRA/IBGE.*",
+          "confidence": 0.0,
+          "entity_recall": 1.0,
+          "faithfulness": 0.0,
+          "citation_score": 0.0,
+          "paths_count": 0,
+          "chunks_count": 0,
+          "cypher_generated": "",
+          "rationale": "O contexto fornecido era '[SEM CONTEXTO]', mas a resposta gerada inventou municípios específicos produtores de milho na Paraíba e dados numéricos detalhados de área plantada, quantidade produzida e produtividade sem suporte factual."
+        },
+        "vector": {
+          "answer": "Os trechos recuperados não respondem à pergunta sobre a área plantada e a quantidade produzida de milho nos principais municípios produtores da Paraíba [Fonte: teste_agro.pdf, p. 1].",
+          "confidence": 0.4911,
+          "entity_recall": 0.3333,
+          "faithfulness": 1.0,
+          "citation_score": 0.5,
+          "paths_count": 0,
+          "chunks_count": 1,
+          "cypher_generated": "",
+          "rationale": "O modelo respondeu honestamente que o contexto recuperado não contém a informação solicitada, sem inventar dados."
+        },
+        "hybrid": {
+          "answer": "Com base no contexto fornecido, as informações são as seguintes:\n\n* **Sobre o milho e os municípios produtores:** O documento informa apenas que \"O milho é uma cultura agrícola importante\" [Fonte: teste_agro.pdf, p. 1]. O contexto não contém dados sobre a área plantada ou a quantidade produzida de milho nos municípios mencionados.\n* **Sobre os municípios e dados fundiários (SNCR-PB):** O contexto apresenta os dados fundiários referentes a uma amostra uniforme de 1/6 do SNCR-PB (~39,5 mil registros no Neo4j Aura) para os municípios mais centrais no subgrafo:\n  - [POÇO DE JOSÉ DE MOURA] --(LOCALIZADO_EM)--> [PB] com 32 imóveis na amostra e área total de 448,68 ha.\n  - [SERRA DA RAIZ] --(LOCALIZADO_EM)--> [PB] com 6 imóveis na amostra e área total de 413,59 ha.\n  - [SÃO SEBASTIÃO DE LAGOA DE ROÇA] --(LOCALIZADO_EM)--> [PB] com 8 imóveis na amostra e área total de 26,69 ha.\n  - [SANTANA DE MANGUEIRA] --(LOCALIZADO_EM)--> [PB] com 8 imóveis na amostra e área total de 465,6 ha.\n  - [ALGODÃO DE JANDAÍRA] --(LOCALIZADO_EM)--> [PB] com 3 imóveis na amostra e área total de 151,35 ha.\n  - [LAGOA DE DENTRO] --(LOCALIZADO_EM)--> [PB] com 8 imóveis na amostra e área total de 286,0 ha.\n\nRessalta-se que os números de imóveis e áreas do SNCR-PB refletem a amostra uniforme de 1/6 do SNCR-PB (~39,5 mil registros no Neo4j Aura). \n\nO que não foi encontrado nas fontes: a área plantada e a quantidade produzida de milho para os referidos municípios.",
+          "confidence": 0.521,
+          "entity_recall": 0.3333,
+          "faithfulness": 1.0,
+          "citation_score": 1.0,
+          "paths_count": 0,
+          "chunks_count": 1,
+          "cypher_generated": "MATCH (m:Municipio {uf: 'PB'})-[p:PRODUZ]->(c:CulturaAgricola) WHERE toLower(c.nome) CONTAINS 'milho' RETURN m.nome AS Municipio, p.area_plantada_ha AS AreaPlantadaHa, p.quantidade_ton AS QuantidadeTon, p.ano AS Ano ORDER BY p.quantidade_ton DESC LIMIT 10",
+          "rationale": "A resposta gerada foi totalmente honesta, informando corretamente que o contexto recuperado não contém os dados sobre área plantada e quantidade produzida de milho, e descreveu com precisão apenas as informações fundiárias e contextuais fornecidas."
+        }
+      }
+    },
+    {
+      "id": "Q07",
+      "category": "embrapa",
+      "question": "Quais estratégias de manejo e rotação de culturas a Embrapa recomenda para a cultura da soja?",
+      "results": {
+        "no_context": {
+          "answer": "Para a cultura da soja, a Embrapa recomenda estratégias integradas de manejo e rotação de culturas focadas na sustentabilidade do solo, controle de pragas, doenças e plantas daninhas. As principais diretrizes são:\n\n1. **Rotação de Culturas:**\n   * **Alternância de famílias botânicas:** Evitar o cultivo contínuo de soja na mesma área para quebrar o ciclo de patógenos (como nematoides e o fungo da ferrugem asiática) e pragas.\n   * **Uso de gramíneas:** Introduzir gramíneas como milho, sorgo, braquiária e milheto no sistema. Elas produzem grande quantidade de palhada, melhoram a estrutura do solo, aumentam o teor de matéria orgânica e ajudam no controle de plantas daninhas por sufocamento e alelopatia.\n\n2. **Plantio Direto na Palha (SPDP):**\n   * Manutenção da cobertura permanente do solo com resíduos vegetais para reter umidade, reduzir a erosão, regular a temperatura do solo e favorecer a atividade biológica.\n\n3. **Manejo Integrado de Pragas (MIP) e Doenças:**\n   * Monitoramento frequente da lavoura para aplicação de defensivos apenas no nível de dano econômico.\n   * Uso de cultivares com resistência genética e adoção de \"vazio sanitário\" para o controle da ferrugem asiática.\n\n4. **Manejo da Fertilidade do Solo:**\n   * Correção da acidez (calagem) e adubação baseada em análises de solo periódicas, priorizando a profundidade para estimular o desenvolvimento radicular.",
+          "confidence": 0.0,
+          "entity_recall": 1.0,
+          "faithfulness": 0.0,
+          "citation_score": 0.0,
+          "paths_count": 0,
+          "chunks_count": 0,
+          "cypher_generated": "",
+          "rationale": "O contexto fornecido é '[SEM CONTEXTO]', mas a resposta gerada detalha extensamente várias recomendações da Embrapa, incluindo rotação de culturas, espécies de gramíneas, plantio direto e MIP. Como nenhum dado externo pode ser usado e a resposta foi gerada sem contexto (hallucinação total com base estritamente na regra de ausência de contexto), a fidelidade factual é 0.0."
+        },
+        "vector": {
+          "answer": "Os trechos recuperados não respondem à pergunta, pois contêm apenas informações sobre a cultura do milho e não mencionam estratégias de manejo e rotação de culturas para a soja [Fonte: teste_agro.pdf, p. 1].",
+          "confidence": 0.4979,
+          "entity_recall": 0.5,
+          "faithfulness": 1.0,
+          "citation_score": 0.5,
+          "paths_count": 0,
+          "chunks_count": 1,
+          "cypher_generated": "",
+          "rationale": "O modelo respondeu honestamente que o contexto não contém a informação solicitada, sem inventar fatos ou dados externos."
+        },
+        "hybrid": {
+          "answer": "Com base no contexto fornecido, não há informações sobre estratégias de manejo, rotação de culturas ou recomendações da Embrapa para a cultura da soja [Fonte: teste_agro.pdf, p. 1]. O documento disponível menciona apenas que \"O milho é uma cultura agrícola importante\" [Fonte: teste_agro.pdf, p. 1]. Portanto, a resposta para essa pergunta não foi encontrada nas fontes.",
+          "confidence": 0.5241,
+          "entity_recall": 1.0,
+          "faithfulness": 1.0,
+          "citation_score": 0.5,
+          "paths_count": 0,
+          "chunks_count": 1,
+          "cypher_generated": "",
+          "rationale": "O modelo respondeu honestamente que o contexto fornecido não contém informações sobre estratégias de manejo ou rotação de culturas para a soja, sem inventar dados."
+        }
+      }
+    },
+    {
+      "id": "Q08",
+      "category": "embrapa",
+      "question": "Quais são as principais pragas que afetam o milho e como deve ser feito o monitoramento segundo os manuais da Embrapa?",
+      "results": {
+        "no_context": {
+          "answer": "Segundo os manuais da Embrapa, as principais pragas que afetam a cultura do milho são:\n\n1. **Lagarta-do-cartucho** (*Spodoptera frugiperda*): Principal praga do milho, cujas lagartas se alimentam das folhas, destruindo o cartucho e podendo atingir a espiga.\n2. **Cigarrinha-do-milho** (*Dalbulus maidis*): Vetor dos mollicutes (enfezamentos) e do vírus do raiado-fino.\n3. **Percevejos** (ex: *Dichelops melacanthus* e *Euschistus heros*): Sugam a seiva e injetam toxinas, causando morte de plantas (coração morto) e perfilhamento.\n4. **Broca-da-cana** (*Diatraea saccharalis*): Suas lagartas perfuricam o colmo, prejudicando a translocação de nutrientes e causando tombamento.\n5. **Lagarta-elasmo** (*Elasmopalpus lignosellus*): Ataca principalmente na fase inicial, cortando o colmo rente ao solo.\n6. **Pulgão-do-milho** (*Rhopalosiphum maidis*): Suga a seiva e secreta substâncias açucaradas que favorecem o crescimento de fumagina.\n\n---\n\n### Como deve ser feito o monitoramento (Diretrizes da Embrapa)\n\n* **Frequência:** O monitoramento deve ser semanal, iniciando logo após a emergência das plântulas e estendendo-se até o florescimento (período crítico).\n* **Método de Amostragem:** Caminhamento em zigue-zague na lavoura, dividindo a área em talhões homogêneos para garantir representatividade.\n* **Amostras por Talhão:** Vistorias visuais em pontos preestabelecidos (geralmente de 10 a 20 pontos por talhão, examinando de 5 a 10 plantas consecutivas por ponto).\n* **Uso de Armadilhas:** \n  * *Armadilhas adesivas amareladas* para o monitoramento populacional de adultos da cigarrinha-do-milho.\n  * *Armadilhas com feromônio* para monitoramento de mariposas (como a lagarta-do-cartucho e broca).\n* **Critério de Tomada de Decisão (Nível de Dano Econômico):** As ações de controle (químico ou biológico) devem ser acionadas antes que a praga cause danos irreversíveis. \n  * *Exemplo para Lagarta-do-cartucho:* Geralmente inicia-se o controle quando se observa cerca de **10% a 20% de plantas danificadas** com presença de lagartas vivas no cartucho na fase vegetativa inicial/média.\n  * *Exemplo para Cigarrinha:* O controle deve ser preventivo/imediato desde a emergência, pois a transmissão dos patógenos ocorre com poucos insetos vetores na área.",
+          "confidence": 0.0,
+          "entity_recall": 1.0,
+          "faithfulness": 0.0,
+          "citation_score": 0.0,
+          "paths_count": 0,
+          "chunks_count": 0,
+          "cypher_generated": "",
+          "rationale": "Como o contexto fornecido indicava explicitamente '[SEM CONTEXTO]', o modelo gerou uma resposta detalhada baseada em conhecimento paramétrico pré-treinado, o que viola a diretriz de que nenhuma informação externa deve ser utilizada e resulta em faithfulness zero."
+        },
+        "vector": {
+          "answer": "Os trechos recuperados não respondem à pergunta, pois contêm apenas a informação de que o milho é uma cultura agrícola importante, sem mencionar as principais pragas ou como deve ser feito o monitoramento [Fonte: teste_agro.pdf, p. 1].",
+          "confidence": 0.504,
+          "entity_recall": 0.3333,
+          "faithfulness": 1.0,
+          "citation_score": 0.5,
+          "paths_count": 0,
+          "chunks_count": 1,
+          "cypher_generated": "",
+          "rationale": "A resposta identificou corretamente que o contexto recuperado não contém a informação necessária para responder à pergunta e recusou-se a inventar dados, mantendo total fidelidade factual."
+        },
+        "hybrid": {
+          "answer": "Com base no contexto fornecido, não há informações sobre as principais pragas que afetam o milho nem sobre como deve ser feito o seu monitoramento segundo os manuais da Embrapa. \n\nO contexto menciona apenas que \"O milho é uma cultura agrícola importante\" [Fonte: teste_agro.pdf, p. 1], além de dados de PageRank e do resumo fundiário do SNCR-PB para os municípios de SÃO JOSÉ DA LAGOA TAPADA, SÃO BENTO, SÃO DOMINGOS, SÃO FRANCISCO, SÃO MAMEDE e SÃO JOSÉ DE PIRANHAS. \n\nPortanto, as pragas do milho e as diretrizes de monitoramento da Embrapa não foram encontradas nas fontes fornecidas.",
+          "confidence": 0.5268,
+          "entity_recall": 0.6667,
+          "faithfulness": 1.0,
+          "citation_score": 0.5,
+          "paths_count": 0,
+          "chunks_count": 1,
+          "cypher_generated": "",
+          "rationale": "O modelo respondeu honestamente que a informação sobre pragas do milho e monitoramento da Embrapa não está presente no contexto, limitando-se a relatar o que efetivamente consta nos dados recuperados."
+        }
+      }
+    },
+    {
+      "id": "Q09",
+      "category": "embrapa",
+      "question": "Como deve ser conduzido o manejo integrado de pragas (MIP) para controle de percevejos e lagartas na soja?",
+      "results": {
+        "no_context": {
+          "answer": "O Manejo Integrado de Pragas (MIP) na soja para o controle de percevejos e lagartas deve ser conduzido em cinco etapas fundamentais:\n\n1. **Amostragem regular (Monitoramento):** \n   * **Lagartas:** Utilizar o método do pano de batida (preferencialmente) ou contagem visual de plantas por hectare, semanalmente.\n   * **Percevejos:** Utilizar o pano de batida nos turnedos vegetativo e reprodutivo, avaliando a presença de ninfas e adultos.\n\n2. **Nível de Ação (Limiar Econômico):** \n   * Só aplicar defensivos quando a população da praga atingir o limite que causa prejuízo econômico superior ao custo do controle. \n   * *Exemplos comuns:* **Lagartas desfolhadoras:** 20 a 30% de desfolha na fase vegetativa e 15% na fase reprodutiva (com presença de lagartas maiores que 1,5 cm). **Percevejos:** 2 percevejos por metro de pano de batida na soja de grão, ou 1 percevejo por metro na soja destinada à semente.\n\n3. **Controle Biológico e Cultural:** \n   * Preservar inimigos naturais (parasitóides como *Trichogramma*, predadores e entomopatógenos como *Beauveria bassiana* e *Bacillus thuringiensis*).\n   * Realizar rotação de culturas e uso de cultivares adaptadas.\n\n4. **Controle Químico Seletivo:** \n   * Se o nível de ação for atingido, priorizar produtos seletivos que preservem os inimigos naturais.\n   * Fazer a rotação de ingredientes ativos (mecanismos de ação) para evitar a resistência das pragas.\n\n5. **Avaliação de Eficácia:** \n   * Retornar à lavoura dias após a aplicação para verificar se o controle foi efetivo.",
+          "confidence": 0.0,
+          "entity_recall": 1.0,
+          "faithfulness": 0.0,
+          "citation_score": 0.0,
+          "paths_count": 0,
+          "chunks_count": 0,
+          "cypher_generated": "",
+          "rationale": "O sistema gerou uma resposta detalhada sobre o Manejo Integrado de Pragas (MIP) com etapas, limiares econômicos e exemplos específicos, mas o contexto fornecido era '[SEM CONTEXTO]'. Todas as informações factuais e técnicas foram inventadas pelo modelo sem base no contexto."
+        },
+        "vector": {
+          "answer": "Os trechos recuperados não respondem à pergunta, pois contêm apenas informações sobre a importância da cultura do milho e não abordam o manejo integrado de pragas (MIP) para controle de percevejos e lagartas na soja.",
+          "confidence": 0.493,
+          "entity_recall": 1.0,
+          "faithfulness": 1.0,
+          "citation_score": 0.0,
+          "paths_count": 0,
+          "chunks_count": 1,
+          "cypher_generated": "",
+          "rationale": "O modelo respondeu honestamente que o contexto não contém a informação necessária para responder à pergunta, sem inventar dados."
+        },
+        "hybrid": {
+          "answer": "Com base nas fontes fornecidas, o contexto não contém nenhuma informação sobre o manejo integrado de pragas (MIP) para controle de percevejos e lagartas na soja. \n\nConforme as regras de mitigação de alucinações, declaro explicitamente que esta informação não foi encontrada nas fontes (Trechos Documentais, Subgrafo Multi-hop, Dados Agrícolas IBGE e Resultados Cypher do SNCR). O único trecho documental disponível menciona apenas que \"O milho é uma cultura agrícola importante\" [Fonte: teste_agro.pdf, p. 1].",
+          "confidence": 0.5218,
+          "entity_recall": 1.0,
+          "faithfulness": 1.0,
+          "citation_score": 0.5,
+          "paths_count": 0,
+          "chunks_count": 1,
+          "cypher_generated": "",
+          "rationale": "O modelo identificou corretamente que o contexto recuperado não contém informações sobre o manejo integrado de pragas para soja e respondeu de forma honesta, sem inventar dados."
+        }
+      }
+    },
+    {
+      "id": "Q10",
+      "category": "multihop",
+      "question": "Quais municípios da Paraíba produzem milho segundo o IBGE e quais pragas e práticas de controle a Embrapa recomenda para essa cultura?",
+      "results": {
+        "no_context": {
+          "answer": "De acordo com o IBGE (Produção Agrícola Municipal), **praticamente todos os 223 municípios da Paraíba produzem milho**, com destaque para a agricultura de subsistência e de sequeiro. Os maiores volumes concentram-se nas regiões do **Agreste Paraibano** (ex: Lagoa Seca, Esperança, Alagoa Nova), **Borborema** (ex: Remígio, Areia) e **Sertão** (ex: Sousa, Cajazeiras, Patos).\n\nSegundo a **Embrapa**, as principais recomendações para a cultura do milho são:\n\n### 1. Principais Pragas\n* **Lagarta-do-cartucho (*Spodoptera frugiperda*):** A praga mais destrutiva, ataca as folhas e o cartucho da planta.\n* **Lagarta-rosca (*Agrotis ipsilon*):** Corta as plantas jovens rente ao solo no início do ciclo.\n* ** Percegãos-suga-cartucho e Percevejo-barriga-verde:** Atacam a base e as folhas, causando deformações.\n* **Cigarrinha-do-milho (*Dalbulus maidis*):** Vetor de doenças como os enfezamentos (vermelho e pálido) e o vírus do mexe-mexe.\n* **Broca-da-cana (*Diatraea saccharalis*):** Perfuram o colmo, enfraquecendo a planta.\n\n### 2. Práticas de Controle Recomendadas pela Embrapa\n* **Controle Biológico:** Uso de inimigos naturais, como a vespinha *Trichogramma pretiosum* para controle de ovos de lagartas, e o fungo *Beauveria bassiana*.\n* **Tratamento de Sementes:** Utilização de inseticidas registrados para proteger as plântulas contra pragas iniciais (como lagarta-rosca e percevejos).\n* **Manejo Integrado de Pragas (MIP):** Monitoramento constante da lavoura e aplicação de defensivos químicos (inseticidas) somente quando atingido o nível de dano econômico, priorizando produtos seletivos.\n* **Plantio Direto e Rotação de Culturas:** Interrompem o ciclo de vida das pragas no solo.\n* **Uso de Cultivares Resistentes:** Plantio de híbridos com tecnologias Bt (que expressam proteínas tóxicas a certas lagartas) e variedades adaptadas à região semiárida.",
+          "confidence": 0.0,
+          "entity_recall": 0.6667,
+          "faithfulness": 0.0,
+          "citation_score": 0.0,
+          "paths_count": 0,
+          "chunks_count": 0,
+          "cypher_generated": "",
+          "rationale": "O sistema gerou uma resposta detalhada com diversos municípios, pragas e recomendações da Embrapa, apesar de o contexto recuperado estar explicitamente como '[SEM CONTEXTO]'. Toda a informação factual foi externalizada/alucinada sem suporte no contexto fornecido."
+        },
+        "vector": {
+          "answer": "Os trechos recuperados não respondem à pergunta, pois contêm apenas a informação genérica de que \"O milho é uma cultura agrícola importante\" [Fonte: teste_agro.pdf, p. 1], não mencionando os municípios da Paraíba produtores de milho segundo o IBGE, tampouco as pragas e práticas de controle recomendadas pela Embrapa.",
+          "confidence": 0.4968,
+          "entity_recall": 0.6667,
+          "faithfulness": 1.0,
+          "citation_score": 0.5,
+          "paths_count": 0,
+          "chunks_count": 1,
+          "cypher_generated": "",
+          "rationale": "O modelo respondeu honestamente que o contexto recuperado não contém as informações solicitadas, sem inventar nenhum dado."
+        },
+        "hybrid": {
+          "answer": "Com base no contexto fornecido, as informações são as seguintes:\n\n* **Municípios produtores de milho segundo o IBGE:** O contexto não contém informações sobre quais municípios produzem milho segundo o IBGE. \n* **Pragas e práticas de controle recomendadas pela Embrapa:** O contexto menciona apenas que \"O milho é uma cultura agrícola importante\" [Fonte: teste_agro.pdf, p. 1], mas não traz nenhuma informação sobre pragas ou práticas de controle recomendadas pela Embrapa.\n\nPortanto, as fontes não contêm informações suficientes para responder sobre os municípios produtores de milho pelo IBGE, tampouco sobre as pragas e práticas de controle da Embrapa.\n\n*(Nota sobre os dados fundiários disponíveis no grafo: embora o contexto traga dados de imóveis rurais e áreas do SNCR-PB para os municípios de POÇO DE JOSÉ DE MOURA, SERRA DA RAIZ, SÃO SEBASTIÃO DE LAGOA DE ROÇA, SANTANA DE MANGUEIRA, ALGODÃO DE JANDAÍRA e LAGOA DE DENTRO — cujos números refletem a amostra uniforme de 1/6 do SNCR-PB, equivalente a ~39,5 mil registros no Neo4j Aura —, nenhuma relação com a produção de milho ou com pragas foi encontrada nas fontes).*",
+          "confidence": 0.5235,
+          "entity_recall": 1.0,
+          "faithfulness": 1.0,
+          "citation_score": 0.5,
+          "paths_count": 0,
+          "chunks_count": 1,
+          "cypher_generated": "MATCH (m:Municipio {uf: 'PB'})-[p:PRODUZ]->(c:CulturaAgricola) WHERE toLower(c.nome) CONTAINS toLower('milho') OPTIONAL MATCH (c)<-[:AFETA]-(praga:Praga) OPTIONAL MATCH (c)<-[:RECOMENDA]-(pratica:PraticaAgricola) RETURN m.nome AS Municipio, p.quantidade_ton AS QuantidadeTon, collect(DISTINCT praga.nome) AS Pragas, collect(DISTINCT pratica.nome) AS PraticasRecomendadas LIMIT 25",
+          "rationale": "A resposta identificou corretamente que o contexto recuperado não contém informações sobre quais municípios produzem milho segundo o IBGE, tampouco sobre pragas e práticas de controle da Embrapa, sem inventar dados e mantendo total fidelidade às evidências."
+        }
+      }
+    },
+    {
+      "id": "Q11",
+      "category": "multihop",
+      "question": "Integrando SNCR, IBGE e Embrapa, como os municípios com maior cadastro rural na Paraíba se conectam à produção de milho ou soja e às práticas recomendadas de manejo de pragas?",
+      "results": {
+        "no_context": {
+          "answer": "A integração dos dados do SNCR (Incra), IBGE e Embrapa revela que, na Paraíba, a concentração de Cadastros Rurais (SNCR) não coincide com os polos tradicionais de *commodities* de grãos do Matopiba. \n\nEis a conexão de forma objetiva:\n\n1. **Conexão com a Produção de Milho e Soja:**\n   * **Soja:** A produção paraibana de soja é **inexpressiva** comercialmente no cenário nacional. O cultivo é pontual e experimental no Semiárido (sob irrigação) e em microfichas no Brejo, sem correlação direta com os maiores volumes de cadastro fundiário.\n   * **Milho:** O milho possui alta capilaridade, mas é cultivado majoritariamente como **cultura de subsistência e consórcio** (milho-feijão) pela agricultura familiar, e não em grandes lavouras mecanizadas. Os municípios com maior número de cadastros (foco na agricultura familiar e minifúndios) produzem milho voltado para a **avicultura de corte e pecuária de leite locais**, e não para a exportação ou grandes cadeias agroindustriais.\n\n2. **Práticas Recomendadas de Manejo de Pragas (Embrapa):**\n   * **Difusão Tecnológica:** Nos municípios com maior densidade cadastral (maior atuação de órgãos de extensão rural como a Empaer-PB), as recomendações da Embrapa (como o Manejo Integrado de Pragas - MIP para a lagarta-do-cartucho no milho) chegam de forma **heterogênea**. \n   * **Limitação Estrutural:** O alto número de pequenos cadastros no Semiárido limita a adoção rápida de tecnologias de precisão da Embrapa, predominando o controle químico tradicional. No entanto, em polos de agricultura irrigada (como o vale do Piancó ou Sousa) e no Brejo, há maior adesão às orientações de zoneamento agrícola de risco climático (ZARC) e controle biológico preconizados pela Embrapa.",
+          "confidence": 0.0,
+          "entity_recall": 0.5,
+          "faithfulness": 0.0,
+          "citation_score": 0.0,
+          "paths_count": 0,
+          "chunks_count": 0,
+          "cypher_generated": "",
+          "rationale": "O contexto recuperado é '[SEM CONTEXTO]'. A resposta gerada inventa uma quantidade massiva de detalhes factuais específicos sobre a Paraíba, milho, soja, Embrapa, manejo de pragas e regiões geográficas que não foram fornecidos no contexto."
+        },
+        "vector": {
+          "answer": "Os trechos recuperados não respondem à pergunta, pois contêm apenas a informação genérica de que \"O milho é uma cultura agrícola importante\" e não mencionam a integração entre SNCR, IBGE e Embrapa, os municípios com maior cadastro rural na Paraíba, nem a conexão com a produção de milho/soja e práticas de manejo de pragas [Fonte: teste_agro.pdf, p. 1].",
+          "confidence": 0.5033,
+          "entity_recall": 0.5,
+          "faithfulness": 1.0,
+          "citation_score": 0.5,
+          "paths_count": 0,
+          "chunks_count": 1,
+          "cypher_generated": "",
+          "rationale": "A resposta reconheceu corretamente que o contexto recuperado é insuficiente para responder à pergunta, sem inventar nenhuma informação ou dado externo."
+        },
+        "hybrid": {
+          "answer": "Com base exclusivamente no contexto fornecido, as informações disponíveis sobre os municípios com maior cadastro rural na Paraíba, sua conexão com a produção de milho ou soja e as práticas recomendadas de manejo de pragas são as seguintes:\n\n*Nota: Os números de imóveis rurais e áreas do SNCR-PB informados refletem a amostra uniforme de 1/6 do SNCR-PB (~39,5 mil registros no Neo4j Aura).*\n\n1. **Municípios com maior cadastro rural e total de imóveis:**\n   Os resultados da consulta Cypher que mapeiam os municípios da Paraíba com maior número de imóveis (`[Municipio] <-[:LOCALIZADO_EM]- [ImovelRural]`) listam os seguintes destaques:\n   - **PICUÍ**: 1.560 imóveis\n   - **CUITÉ**: 1.203 imóveis\n   - **CATOLÉ DO ROCHA**: 1.059 imóveis\n   - **ARAÇAGI**: 959 imóveis\n   - **RIACHO DOS CAVALOS**: 863 imóveis\n   - **BOM SUCESSO**: 785 imóveis\n   - **BARRA DE SANTA ROSA**: 768 imóveis\n   - **JERICÓ**: 725 imóveis\n   - **ALAGOA GRANDE**: 628 imóveis\n   - **CACIMBA DE DENTRO**: 625 imóveis (também listado no Resumo Fundiário com 625 imóveis na amostra e 8.597,08 ha de área total).\n\n2. **Conexão com a produção de milho ou soja e práticas de manejo:**\n   - Para os municípios listados no resultado da consulta Cypher (incluindo os maiores cadastros rurais), **não foram encontradas** relações de produção (`PRODUZ`) de milho ou soja, nem práticas recomendadas associadas no subgrafo (os campos de Cultura, Produção em toneladas e Práticas Recomendadas retornaram nulos ou vazios). \n   - A única menção à cultura do milho presente nas fontes documentais indica apenas que *\"O milho é uma cultura agrícola importante\"* [Fonte: teste_agro.pdf, p. 1], sem vinculá-la diretamente aos municípios listados.\n\nPortanto, o contexto não contém informações suficientes para associar os municípios de maior cadastro rural da Paraíba a volumes específicos de produção de milho/soja ou a práticas agrícolas recomendadas de manejo por meio de caminhos do grafo.",
+          "confidence": 0.9,
+          "entity_recall": 1.0,
+          "faithfulness": 1.0,
+          "citation_score": 0.5,
+          "paths_count": 0,
+          "chunks_count": 1,
+          "cypher_generated": "MATCH (m:Municipio {uf: 'PB'})<-[:LOCALIZADO_EM]-(i:ImovelRural) WITH m, count(i) as total_imoveis ORDER BY total_imoveis DESC LIMIT 10 OPTIONAL MATCH (m)-[p:PRODUZ]->(c:CulturaAgricola) WHERE toLower(c.nome) CONTAINS 'milho' OR toLower(c.nome) CONTAINS 'soja' OPTIONAL MATCH (c)-[:MANEJADA_COM|RECOMENDA]-(prat:PraticaAgricola) RETURN m.nome AS Municipio, total_imoveis, c.nome AS Cultura, p.quantidade_ton AS ProducaoTon, collect(DISTINCT prat.nome) AS PraticasRecomendadas LIMIT 25",
+          "rationale": "A resposta utiliza exclusivamente os dados fornecidos no contexto, citando corretamente os municípios e números de imóveis da consulta Cypher e do resumo fundiário, além de apontar com precisão que os campos de cultura/produção/práticas retornaram nulos e que a menção ao milho no documento é genérica."
+        }
+      }
+    },
+    {
+      "id": "Q12",
+      "category": "multihop",
+      "question": "Quais práticas agrícolas recomendadas pela Embrapa contribuem para a viabilidade técnica do cultivo de milho nos municípios produtores da Paraíba?",
+      "results": {
+        "no_context": {
+          "answer": "Segundo as recomendações da Embrapa para o cultivo de milho no semiárido e nos municípios produtores da Paraíba (região Nordeste), as principais práticas agrícolas que garantem a viabilidade técnica e a mitigação de riscos climáticos são:\n\n1. **Zoneamento Agrícola de Risco Climático (ZARC):** Observar rigorosamente o calendário de plantio recomendado pelo ZARC para o município, visando alinhar a fase mais sensível da cultura (florescimento) com o período de maior probabilidade de chuvas.\n2. **Preparo conservacionista do solo:** Adoção de práticas como o plantio direto ou o cultivo mínimo para reter umidade no solo e evitar a erosão, comum em áreas de declividade ou sujeitas a enxurradas.\n3. **Uso de sementes adaptadas (Cultivares recomendadas):** Utilização de cultivares (varietais ou híbridos) validadas pela Embrapa para a região Nordeste, que apresentam maior tolerância ao déficit hídrico (estresse hídrico) e resistência a pragas e doenças locais.\n4. **Adubação baseada na análise de solo:** Aplicação correta de fertilizantes (nitrogênio, fósforo e potássio) fundamentada na análise prévia da fertilidade do solo, com foco na adubação nitrogenada em cobertura parcelada.\n5. **Manejo integrado de pragas (MIP):** Monitoramento e controle rigoroso de pragas-chave, com destaque para a *Spodoptera frugiperda* (lagarta-do-cartucho), utilizando controle biológico, químico ou sementes geneticamente modificadas (Bt) quando adequado.\n6. **Controle de plantas daninhas:** Realização de capinas ou aplicação de herbicidas nos estágios iniciais de desenvolvimento do milho (3 a 5 folhas) para evitar a competição por água, luz e nutrientes.",
+          "confidence": 0.0,
+          "entity_recall": 1.0,
+          "faithfulness": 0.0,
+          "citation_score": 0.0,
+          "paths_count": 0,
+          "chunks_count": 0,
+          "cypher_generated": "",
+          "rationale": "O contexto recuperado é '[SEM CONTEXTO]', mas a resposta gerada inclui uma lista detalhada e específica de recomendações agrícolas da Embrapa, ZARC, cultivares e pragas, o que constitui invenção de dados sem base no contexto fornecido."
+        },
+        "vector": {
+          "answer": "Os trechos recuperados não respondem à pergunta, pois mencionam apenas que o milho é uma cultura agrícola importante, sem conter informações sobre práticas agrícolas recomendadas pela Embrapa ou sobre a viabilidade técnica do cultivo nos municípios produtores da Paraíba [Fonte: teste_agro.pdf, p. 1].",
+          "confidence": 0.4915,
+          "entity_recall": 1.0,
+          "faithfulness": 1.0,
+          "citation_score": 0.5,
+          "paths_count": 0,
+          "chunks_count": 1,
+          "cypher_generated": "",
+          "rationale": "O modelo respondeu honestamente que o contexto não contém a informação solicitada, sem inventar fatos ou dados externos."
+        },
+        "hybrid": {
+          "answer": "Com base no contexto fornecido, não há informações sobre práticas agrícolas recomendadas pela Embrapa para a cultura do milho ou para a viabilidade técnica do cultivo nos municípios produtores da Paraíba. O único trecho documental disponível menciona apenas que \"O milho é uma cultura agrícola importante\" [Fonte: teste_agro.pdf, p. 1]. \n\nPortanto, as informações sobre recomendações da Embrapa e práticas agrícolas não foram encontradas nas fontes.\n\nEm relação aos municípios produtores mencionados no subgrafo e nos dados fundiários (cujos números refletem a amostra uniforme de 1/6 do SNCR-PB, com cerca de 39,5 mil registros no Neo4j Aura), temos os seguintes dados da amostra:\n- [POÇO DE JOSÉ DE MOURA] --(LOCALIZADO_EM)--> [PB] (32 imóveis, área total de 448,68 ha)\n- [SERRA DA RAIZ] --(LOCALIZADO_EM)--> [PB] (6 imóveis, área total de 413,59 ha)\n- [SÃO SEBASTIÃO DE LAGOA DE ROÇA] --(LOCALIZADO_EM)--> [PB] (8 imóveis, área total de 26,69 ha)\n- [BELÉM DO BREJO DO CRUZ] --(LOCALIZADO_EM)--> [PB] (227 imóveis, área total de 23.781,03 ha)\n- [CURRAL DE CIMA] --(LOCALIZADO_EM)--> [PB] (21 imóveis, área total de 152,7 ha)\n- [ALGODÃO DE JANDAÍRA] --(LOCALIZADO_EM)--> [PB] (3 imóveis, área total de 151,35 ha)",
+          "confidence": 0.5212,
+          "entity_recall": 1.0,
+          "faithfulness": 1.0,
+          "citation_score": 1.0,
+          "paths_count": 0,
+          "chunks_count": 1,
+          "cypher_generated": "",
+          "rationale": "O modelo respondeu honestamente que o contexto não contém as práticas agrícolas da Embrapa para o milho, sem inventar informações, e relatou corretamente os dados dos municípios presentes no contexto."
+        }
+      }
+    }
+  ]
+}
