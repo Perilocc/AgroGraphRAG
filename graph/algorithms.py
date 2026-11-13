@@ -65,6 +65,36 @@ def fetch_agronomic_subgraph(
     return list(nodes_map.values()), edges
 
 
+def _compute_pagerank_scores(graph: nx.DiGraph, alpha: float = 0.85) -> dict[str, float]:
+    """Executa PageRank via nx.pagerank ou power-iteration puro (sem exigir scipy)."""
+    try:
+        return nx.pagerank(graph, alpha=alpha)
+    except ModuleNotFoundError:
+        nodes = list(graph.nodes())
+        n = len(nodes)
+        if n == 0:
+            return {}
+        rank = {u: 1.0 / n for u in nodes}
+        out_deg = {u: graph.out_degree(u) for u in nodes}
+        dangling = [u for u in nodes if out_deg[u] == 0]
+
+        for _ in range(100):
+            danglesum = alpha * sum(rank[u] for u in dangling) / n
+            base = (1.0 - alpha) / n + danglesum
+            new_rank = {u: base for u in nodes}
+            for u in nodes:
+                deg = out_deg[u]
+                if deg > 0:
+                    share = alpha * rank[u] / deg
+                    for v in graph.successors(u):
+                        new_rank[v] += share
+            err = sum(abs(new_rank[u] - rank[u]) for u in nodes)
+            rank = new_rank
+            if err < n * 1e-6:
+                break
+        return rank
+
+
 def compute_subgraph_pagerank(
     nodes: list[dict] | None = None,
     edges: list[dict] | None = None,
@@ -94,7 +124,7 @@ def compute_subgraph_pagerank(
         return []
 
     scores = (
-        nx.pagerank(graph, alpha=0.85)
+        _compute_pagerank_scores(graph, alpha=0.85)
         if graph.number_of_edges() > 0
         else {nid: round(1.0 / len(nodes), 6) for nid in node_lookup}
     )
