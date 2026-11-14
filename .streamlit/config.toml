@@ -40,7 +40,7 @@ showSidebarBorder = true
 
 # Paletas de gráficos
 chartCategoricalColors = ["#1F6E43", "#1E6B8C", "#D48817", "#7D5BA6", "#2F7A78", "#C0392B", "#5B6B5E"]
-chartSequentialColors = ["#E7F4EC", "#A7DAB9", "#52B078", "#1F6E43", "#134228"]
+chartSequentialColors = ["#F0F7F2", "#D9ECE0", "#BFE0CB", "#A1D2B4", "#81C39B", "#61B383", "#42A06B", "#2B8955", "#1F6E43", "#134228"]
 
 [theme.sidebar]
 primaryColor = "#4BAE74"
