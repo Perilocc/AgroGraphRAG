@@ -38,7 +38,14 @@ flowchart LR
 
 ### Estrutura do Repositório
 ```text
+├── .streamlit/
+│   └── config.toml            # Tema claro e paleta institucional do Streamlit
+├── assets/                    # Logotipo e ícone SVG da aplicação
 ├── app.py                     # Ponto de entrada Streamlit
+├── ui/
+│   ├── theme.py               # Paleta semântica (ENTITY_COLORS), ícones e injeção de CSS
+│   ├── components.py          # Cabeçalhos, KPIs, badges de confiança e config PyVis
+│   └── styles.css             # Estilos globais do Design System
 ├── pages/
 │   ├── 1_data.py              # Catálogo das fontes de dados
 │   ├── 2_ingestion.py         # Fluxo guiado de limpeza, schema e ingestão
@@ -73,6 +80,7 @@ flowchart LR
 │   ├── config.py              # Variáveis de ambiente (.env)
 │   ├── paths.py               # Caminhos de dados
 │   ├── file_utils.py          # Descoberta do catálogo de dados
+│   ├── llm.py                 # Helper centralizado e lazy init do cliente OpenAI
 │   └── graph_vis.py           # Renderizador interativo PyVis
 └── tests/                     # Suíte de testes unitários e de integração (pytest)
 ```
@@ -190,6 +198,6 @@ Executa as 12 perguntas de `evaluation/questions.json` nos modos `no_context`, `
 * **Neo4j Python Driver (`neo4j`)**: persistência LPG, índices vetoriais/fulltext e execução Cypher.
 * **OpenAI SDK (`openai`)**: extração NER/RE, geração de embeddings (`text-embedding-3-small`), Text-to-Cypher, síntese KAG e avaliação (*LLM-as-a-Judge*).
 * **NetworkX (`networkx`)**: cálculo de centralidade (PageRank) e detecção de comunidades (Louvain) em subgrafos.
-* **PyMuPDF (`pymupdf`) & Pandas (`pandas`)**: extração de PDFs técnicos e manipulação dos datasets SNCR/IBGE.
+* **PyMuPDF (`pymupdf`), Pandas (`pandas`), `xlrd` & `openpyxl`**: extração de PDFs técnicos e leitura/manipulação dos datasets estruturados (SNCR, IBGE e CONAB).
 * **Streamlit (`streamlit`) & PyVis (`pyvis`)**: interface web interativa e renderização de subgrafos de proveniência.
-* **Pytest (`pytest`)**: automação da suíte de testes.
+* **Pytest (`pytest`) & `python-dotenv`**: automação da suíte de testes e gerenciamento de variáveis de ambiente.
