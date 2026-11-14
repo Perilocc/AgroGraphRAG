@@ -1,12 +1,12 @@
 import json
 import re
 from neo4j import Query
-from openai import OpenAI
 
 from graph.connection import get_driver, get_session
 from utils.config import OPENAI_API_KEY, OPENAI_MODEL
+from utils.llm import create_chat_completion, create_openai_client
 
-client = OpenAI(api_key=OPENAI_API_KEY or "not-configured")
+client = create_openai_client(OPENAI_API_KEY)
 
 FORBIDDEN_CYPHER = re.compile(
     r"\b(CREATE|MERGE|DELETE|DETACH|SET|REMOVE|DROP|CALL|LOAD\s+CSV|FOREACH|ALTER|GRANT|DENY|REVOKE|TERMINATE)\b",
@@ -100,7 +100,8 @@ def generate_and_run_cypher(question: str) -> dict:
         return {"cypher": "", "rows": [], "error": "Pergunta vazia."}
 
     try:
-        response = client.chat.completions.create(
+        response = create_chat_completion(
+            client,
             model=OPENAI_MODEL,
             temperature=0,
             response_format={"type": "json_object"},

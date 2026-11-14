@@ -4,6 +4,7 @@ import os
 import threading
 import certifi
 from neo4j import GraphDatabase
+from neo4j.exceptions import ServiceUnavailable, SessionExpired
 
 logging.getLogger("neo4j.notifications").setLevel(logging.ERROR)
 
@@ -37,9 +38,29 @@ def get_driver():
                 _driver = GraphDatabase.driver(
                     NEO4J_URI,
                     auth=(NEO4J_USERNAME, NEO4J_PASSWORD),
+                    max_connection_lifetime=300,
+                    liveness_check_timeout=30.0,
+                    connection_timeout=30.0,
+                    keep_alive=True,
                 )
 
     return _driver
+
+
+def reset_driver():
+    """Descarta o driver em cache para forçar reconexão limpa em caso de socket obsoleto."""
+    close_driver()
+
+
+def is_transient_neo4j_error(exc: Exception) -> bool:
+    """Identifica erros transitórios de leitura/conexão com o Neo4j Aura."""
+    if isinstance(exc, (ServiceUnavailable, SessionExpired, TimeoutError, OSError)):
+        return True
+    msg = str(exc).lower()
+    return any(
+        token in msg
+        for token in ("defunct connection", "timed out", "connection reset", "broken pipe", "service unavailable")
+    )
 
 
 def get_session(driver=None):

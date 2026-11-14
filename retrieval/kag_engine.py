@@ -1,12 +1,12 @@
 import json
-from openai import OpenAI
 
 from retrieval.cypher_generator import generate_and_run_cypher
 from retrieval.hybrid_search import hybrid_retrieve
 from retrieval.vector_search import search_similar_chunks
 from utils.config import OPENAI_API_KEY, OPENAI_MODEL
+from utils.llm import create_chat_completion, create_openai_client
 
-client = OpenAI(api_key=OPENAI_API_KEY or "not-configured")
+client = create_openai_client(OPENAI_API_KEY)
 
 HYBRID_SYSTEM_PROMPT = """
 Você é o assistente técnico AgroGraph Intelligence (GraphRAG & KAG).
@@ -90,7 +90,8 @@ def answer_question(
         raise ValueError("A pergunta não pode ser vazia.")
 
     if mode == "no_context":
-        response = client.chat.completions.create(
+        response = create_chat_completion(
+            client,
             model=OPENAI_MODEL,
             temperature=0,
             messages=[
@@ -120,7 +121,8 @@ def answer_question(
     if mode == "vector":
         chunks = search_similar_chunks(question, top_k=top_k)
         context_text = _format_vector_context(chunks)
-        response = client.chat.completions.create(
+        response = create_chat_completion(
+            client,
             model=OPENAI_MODEL,
             temperature=0,
             messages=[
@@ -155,7 +157,8 @@ def answer_question(
     cypher_res = generate_and_run_cypher(question)
     context_text = _format_hybrid_context(retrieval, cypher_res)
 
-    response = client.chat.completions.create(
+    response = create_chat_completion(
+        client,
         model=OPENAI_MODEL,
         temperature=0,
         messages=[

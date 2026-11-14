@@ -1,5 +1,10 @@
 import hashlib
-from graph.connection import get_driver, get_session
+from graph.connection import (
+    get_driver,
+    get_session,
+    is_transient_neo4j_error,
+    reset_driver,
+)
 from graph.ontology import (
     canonicalize_entity_type,
     normalize_text,
@@ -7,6 +12,17 @@ from graph.ontology import (
 )
 
 _pb_municipios_cache: dict[str, str] | None = None
+
+
+def _run_with_neo4j_retry(fn):
+    """Executa operação Neo4j com reconexão automática (1 tentativa) em erro transitório de socket."""
+    try:
+        return fn()
+    except Exception as exc:
+        if not is_transient_neo4j_error(exc):
+            raise
+        reset_driver()
+        return fn()
 
 
 def invalidate_pb_municipios_cache():
@@ -165,12 +181,14 @@ def save_chunks(chunks: list[dict]) -> int:
             "document_id": document_id,
         })
 
-    driver = get_driver()
+    def _op():
+        driver = get_driver()
+        with get_session(driver) as session:
+            result = session.run(query, chunks=prepared_chunks)
+            record = result.single()
+            return record["total"] if record else 0
 
-    with get_session(driver) as session:
-        result = session.run(query, chunks=prepared_chunks)
-        record = result.single()
-        return record["total"] if record else 0
+    return _run_with_neo4j_retry(_op)
 
 
 def save_knowledge(knowledge: dict) -> int:
@@ -202,61 +220,64 @@ def save_knowledge(knowledge: dict) -> int:
             "tipo": rel_type,
         })
 
-    driver = get_driver()
+    def _op():
+        driver = get_driver()
 
-    with get_session(driver) as session:
-        for label, group in entities_by_type.items():
-            # Label validado contra a whitelist ENTITIES da ontologia
-            if label == "Municipio":
-                # Apenas conecta Municipio existente ao Trecho sem criar duplicatas
-                mun_query = """
+        with get_session(driver) as session:
+            for label, group in entities_by_type.items():
+                # Label validado contra a whitelist ENTITIES da ontologia
+                if label == "Municipio":
+                    # Apenas conecta Municipio existente ao Trecho sem criar duplicatas
+                    mun_query = """
+                    UNWIND $entities AS item
+                    MATCH (e:Entidade:Municipio {id: item.id})
+                    WITH item, e
+                    MATCH (t:Trecho {id: item.trecho_id})
+                    MERGE (e)-[:EXTRAIDO_DE]->(t)
+                    RETURN count(e) AS total
+                    """
+                    session.run(mun_query, entities=group).consume()
+                    continue
+
+                entity_query = f"""
                 UNWIND $entities AS item
-                MATCH (e:Entidade:Municipio {id: item.id})
+
+                MERGE (e:Entidade {{id: item.id}})
+                SET e:{label}
+                SET
+                    e.nome = item.nome,
+                    e.tipo = item.tipo,
+                    e.descricao = item.descricao
+                FOREACH (_ IN CASE WHEN item.embedding IS NOT NULL THEN [1] ELSE [] END |
+                    SET e.embedding = item.embedding
+                )
+
                 WITH item, e
-                MATCH (t:Trecho {id: item.trecho_id})
+                MATCH (t:Trecho {{id: item.trecho_id}})
                 MERGE (e)-[:EXTRAIDO_DE]->(t)
+
                 RETURN count(e) AS total
                 """
-                session.run(mun_query, entities=group).consume()
-                continue
+                session.run(entity_query, entities=group).consume()
 
-            entity_query = f"""
-            UNWIND $entities AS item
+            for rel_type, group in relations_by_type.items():
+                # rel_type validado por sanitize_relation_type (^[A-Z][A-Z0-9_]*$)
+                rel_query = f"""
+                UNWIND $relations AS item
 
-            MERGE (e:Entidade {{id: item.id}})
-            SET e:{label}
-            SET
-                e.nome = item.nome,
-                e.tipo = item.tipo,
-                e.descricao = item.descricao
-            FOREACH (_ IN CASE WHEN item.embedding IS NOT NULL THEN [1] ELSE [] END |
-                SET e.embedding = item.embedding
-            )
+                MATCH (source:Entidade {{id: item.source_id}})
+                MATCH (target:Entidade {{id: item.target_id}})
 
-            WITH item, e
-            MATCH (t:Trecho {{id: item.trecho_id}})
-            MERGE (e)-[:EXTRAIDO_DE]->(t)
+                MERGE (source)-[r:{rel_type}]->(target)
+                SET r.trecho_id = item.trecho_id
 
-            RETURN count(e) AS total
-            """
-            session.run(entity_query, entities=group).consume()
+                RETURN count(r) AS total
+                """
+                session.run(rel_query, relations=group).consume()
 
-        for rel_type, group in relations_by_type.items():
-            # rel_type validado por sanitize_relation_type (^[A-Z][A-Z0-9_]*$)
-            rel_query = f"""
-            UNWIND $relations AS item
+        return len(entities) + len(relations)
 
-            MATCH (source:Entidade {{id: item.source_id}})
-            MATCH (target:Entidade {{id: item.target_id}})
-
-            MERGE (source)-[r:{rel_type}]->(target)
-            SET r.trecho_id = item.trecho_id
-
-            RETURN count(r) AS total
-            """
-            session.run(rel_query, relations=group).consume()
-
-    return len(entities) + len(relations)
+    return _run_with_neo4j_retry(_op)
 
 
 def find_similar_existing_entities(
@@ -297,6 +318,81 @@ def find_similar_existing_entities(
             return [record.data() for record in result]
         except Exception:
             return []
+
+
+def find_similar_existing_entities_batch(
+    entities: list[dict],
+    top_k: int = 3,
+    min_score: float = 0.75,
+    batch_size: int = 40,
+) -> dict[str, list[dict]]:
+    """Busca entidades similares no Neo4j em lote para evitar múltiplas sessões e timeouts."""
+    prepared = []
+    for entity in entities:
+        canonical_type = canonicalize_entity_type(entity.get("tipo", ""))
+        embedding = entity.get("embedding")
+        entity_id = entity.get("id")
+        if canonical_type and embedding and entity_id:
+            prepared.append({
+                "source_id": entity_id,
+                "tipo": canonical_type,
+                "embedding": embedding,
+            })
+
+    if not prepared:
+        return {}
+
+    query = """
+    UNWIND $items AS item
+    CALL (item) {
+        CALL db.index.vector.queryNodes(
+            'entidade_embedding',
+            $candidate_k,
+            item.embedding
+        )
+        YIELD node, score
+        WHERE node.tipo = item.tipo AND score >= $min_score
+        RETURN node.id AS id, node.nome AS nome, node.tipo AS tipo, score
+        ORDER BY score DESC
+        LIMIT $top_k
+    }
+    RETURN item.source_id AS source_id, id, nome, tipo, score
+    """
+
+    matches_by_id: dict[str, list[dict]] = {item["source_id"]: [] for item in prepared}
+    candidate_k = max(top_k * 5, 10)
+
+    for start in range(0, len(prepared), batch_size):
+        chunk_items = prepared[start:start + batch_size]
+
+        def _query_batch(batch=chunk_items):
+            driver = get_driver()
+            with get_session(driver) as session:
+                result = session.run(
+                    query,
+                    items=batch,
+                    candidate_k=candidate_k,
+                    min_score=min_score,
+                    top_k=top_k,
+                )
+                return [record.data() for record in result]
+
+        try:
+            rows = _run_with_neo4j_retry(_query_batch)
+        except Exception:
+            continue
+
+        for row in rows:
+            src_id = row.get("source_id")
+            if src_id in matches_by_id:
+                matches_by_id[src_id].append({
+                    "id": row.get("id"),
+                    "nome": row.get("nome"),
+                    "tipo": row.get("tipo"),
+                    "score": row.get("score"),
+                })
+
+    return matches_by_id
 
 
 def save_sncr_graph(graph_data: dict, batch_size: int = 1000) -> dict:

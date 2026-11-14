@@ -1,5 +1,4 @@
 import json
-from openai import OpenAI
 
 from graph.ontology import (
     canonicalize_entity,
@@ -7,8 +6,9 @@ from graph.ontology import (
     sanitize_relation_type,
 )
 from utils.config import OPENAI_API_KEY, OPENAI_MODEL
+from utils.llm import create_chat_completion, create_openai_client
 
-client = OpenAI(api_key=OPENAI_API_KEY or "not-configured")
+client = create_openai_client(OPENAI_API_KEY)
 
 SYSTEM_PROMPT = """
 Você é um especialista em extração de conhecimento agrícola (NER & RE) para construção de grafos LPG.
@@ -81,7 +81,8 @@ def extract_knowledge(
     if not text.strip():
         return {"entities": [], "relations": [], "unresolved_municipalities": []}
 
-    response = client.chat.completions.create(
+    response = create_chat_completion(
+        client,
         model=OPENAI_MODEL,
         temperature=0,
         response_format={"type": "json_object"},
@@ -193,7 +194,8 @@ def confirm_entity_equivalence_llm(pairs: list[dict]) -> list[tuple[str, str]]:
     )
 
     try:
-        response = client.chat.completions.create(
+        response = create_chat_completion(
+            client,
             model=OPENAI_MODEL,
             temperature=0,
             response_format={"type": "json_object"},

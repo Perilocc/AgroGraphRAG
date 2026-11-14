@@ -2,13 +2,13 @@ import json
 import re
 import time
 from pathlib import Path
-from openai import OpenAI
 
 from graph.ontology import normalize_text
 from retrieval.kag_engine import answer_question
 from utils.config import OPENAI_API_KEY, OPENAI_JUDGE_MODEL
+from utils.llm import create_chat_completion, create_openai_client
 
-client = OpenAI(api_key=OPENAI_API_KEY or "not-configured")
+client = create_openai_client(OPENAI_API_KEY)
 
 
 def _call_with_cooldown(fn, *args, **kwargs):
@@ -98,7 +98,8 @@ def judge_faithfulness(
 
     try:
         response = _call_with_cooldown(
-            client.chat.completions.create,
+            create_chat_completion,
+            client,
             model=OPENAI_JUDGE_MODEL,
             temperature=0,
             response_format={"type": "json_object"},

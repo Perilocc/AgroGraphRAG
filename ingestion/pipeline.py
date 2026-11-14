@@ -1,12 +1,17 @@
+from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 import numpy as np
 
 from graph.repositories import (
     find_similar_existing_entities,
+    find_similar_existing_entities_batch,
     get_pb_municipios_map,
     save_chunks,
     save_knowledge,
 )
+
+_DEFAULT_FIND_SIMILAR = find_similar_existing_entities
 from ingestion.chunking import chunk_pages
 from ingestion.entity_extractor import (
     confirm_entity_equivalence_llm,
@@ -71,13 +76,25 @@ def resolve_semantic_duplicates(
     seen_pair_keys: set[tuple[str, str]] = set()
 
     # 1. Comparação contra entidades já existentes no Neo4j
-    for entity in unique_list:
-        matches = find_similar_existing_entities(
-            entity_type=entity["tipo"],
-            embedding=entity["embedding"],
+    if find_similar_existing_entities is _DEFAULT_FIND_SIMILAR:
+        matches_by_id = find_similar_existing_entities_batch(
+            unique_list,
             top_k=3,
             min_score=LLM_CONFIRM_MIN_THRESHOLD,
         )
+    else:
+        matches_by_id = {
+            entity["id"]: find_similar_existing_entities(
+                entity_type=entity["tipo"],
+                embedding=entity["embedding"],
+                top_k=3,
+                min_score=LLM_CONFIRM_MIN_THRESHOLD,
+            )
+            for entity in unique_list
+        }
+
+    for entity in unique_list:
+        matches = matches_by_id.get(entity["id"], [])
         for match in matches:
             target_id = match.get("id")
             score = float(match.get("score", 0.0))
@@ -221,10 +238,18 @@ def resolve_semantic_duplicates(
     return resolved_entities, resolved_relations, merged_records
 
 
-def ingest_pdf(file_path: Path) -> dict:
+def ingest_pdf(
+    file_path: Path,
+    progress_callback: Callable[[str], None] | None = None,
+) -> dict:
     """Executa a ingestão completa de um PDF com resolução de entidades em 2 camadas."""
+    def _notify(message: str) -> None:
+        if progress_callback is not None:
+            progress_callback(message)
+
     file_path = Path(file_path)
     print(f"Processando: {file_path.name}")
+    _notify(f"Lendo e segmentando {file_path.name}...")
 
     document = read_document(file_path)
 
@@ -247,11 +272,13 @@ def ingest_pdf(file_path: Path) -> dict:
             "unresolved_municipalities": [],
         }
 
+    _notify(f"Gerando embeddings para {len(chunks)} trechos de {file_path.name}...")
     vectors = generate_embeddings([chunk["text"] for chunk in chunks])
 
     for chunk, vector in zip(chunks, vectors):
         chunk["embedding"] = vector
 
+    _notify(f"Salvando {len(chunks)} trechos no Neo4j...")
     saved = save_chunks(chunks)
 
     try:
@@ -263,23 +290,56 @@ def ingest_pdf(file_path: Path) -> dict:
     raw_relations = []
     unresolved_municipalities = []
 
-    for chunk in chunks:
-        knowledge = extract_knowledge(
-            chunk["text"],
-            chunk["id"],
-            pb_municipios_map=pb_municipios_map,
-        )
+    if len(chunks) == 1:
+        _notify(f"Extraindo entidades (1/1 trecho) de {file_path.name}...")
+        chunk_results = [
+            extract_knowledge(
+                chunks[0]["text"],
+                chunks[0]["id"],
+                pb_municipios_map=pb_municipios_map,
+            )
+        ]
+    else:
+        chunk_results = [None] * len(chunks)
+        max_workers = min(4, len(chunks))
+        _notify(f"Extraindo entidades (0/{len(chunks)} trechos) de {file_path.name}...")
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            future_to_idx = {
+                executor.submit(
+                    extract_knowledge,
+                    chunk["text"],
+                    chunk["id"],
+                    pb_municipios_map=pb_municipios_map,
+                ): idx
+                for idx, chunk in enumerate(chunks)
+            }
+            completed = 0
+            for future in as_completed(future_to_idx):
+                idx = future_to_idx[future]
+                chunk_results[idx] = future.result()
+                completed += 1
+                _notify(
+                    f"Extraindo entidades ({completed}/{len(chunks)} trechos) de {file_path.name}..."
+                )
+
+    for knowledge in chunk_results:
         raw_entities.extend(knowledge.get("entities", []))
         raw_relations.extend(knowledge.get("relations", []))
         unresolved_municipalities.extend(
             knowledge.get("unresolved_municipalities", [])
         )
 
+    _notify(
+        f"Resolvendo duplicidades semânticas ({len(raw_entities)} entidades) de {file_path.name}..."
+    )
     resolved_entities, resolved_relations, merged_entities = (
         resolve_semantic_duplicates(raw_entities, raw_relations)
     )
 
     if resolved_entities or resolved_relations:
+        _notify(
+            f"Salvando {len(resolved_entities)} entidades e {len(resolved_relations)} relações no Neo4j..."
+        )
         save_knowledge({
             "entities": resolved_entities,
             "relations": resolved_relations,

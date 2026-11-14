@@ -1,11 +1,10 @@
-from openai import OpenAI
-
 from utils.config import (
     OPENAI_API_KEY,
     OPENAI_EMBEDDING_MODEL,
 )
+from utils.llm import create_openai_client
 
-client = OpenAI(api_key=OPENAI_API_KEY or "not-configured")
+client = create_openai_client(OPENAI_API_KEY)
 
 
 def generate_embeddings(texts: list[str]) -> list[list[float]]:
