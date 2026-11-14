@@ -1,134 +1,161 @@
-import html
+import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 
-from retrieval.vector_search import search_similar_chunks
+from retrieval.kag_engine import answer_question
 from ui import (
     apply_global_styles,
     render_confidence_badge,
+    render_entity_legend,
     render_kpi_row,
     render_page_header,
 )
+from utils.graph_vis import render_interactive_graph
 
 apply_global_styles()
 
 render_page_header(
-    title="Consulta GraphRAG & KAG",
-    subtitle="Busca semântica em conhecimento técnico (Embrapa) com rastreabilidade de trechos e preparação para multi-hop.",
+    title="Consulta Inteligente — GraphRAG & KAG",
+    subtitle=(
+        "Busca Híbrida (Vetorial + Fulltext + Travessia Multi-hop + PageRank + Text-to-Cypher) "
+        "com rastreabilidade explícita e mitigação de alucinações."
+    ),
     icon=":material/travel_explore:",
-    badge_text="Modo Vetorial Ativo",
-    badge_color="blue",
 )
 
-EXAMPLE_QUESTIONS = [
-    "Quais estratégias de manejo são recomendadas para controle de pragas no milho?",
-    "Como realizar o monitoramento de pragas na cultura da soja?",
-    "Quais fatores afetam a viabilidade econômica do cultivo de milho?",
-    "Quais técnicas de produção aumentam a produtividade da soja?",
+SUGGESTED_QUESTIONS = [
+    "Quais municípios da Paraíba produzem milho e quais pragas afetam essa cultura segundo a Embrapa?",
+    "Como controlar a lagarta-do-cartucho no milho e quais práticas agrícolas são recomendadas?",
+    "Quais estratégias de manejo e rotação de culturas são recomendadas para a soja?",
+    "Quais são os 5 municípios da Paraíba com maior área rural cadastrada na amostra SNCR e o que eles produzem?",
+    "Quais práticas reduzem danos por percevejo-marrom na cultura da soja?",
 ]
 
+with st.expander("Sugestões de perguntas multi-hop para demonstração", icon=":material/lightbulb:"):
+    cols = st.columns(len(SUGGESTED_QUESTIONS))
+    for idx, q in enumerate(SUGGESTED_QUESTIONS):
+        if cols[idx].button(f"Exemplo {idx + 1}", key=f"ex_{idx}", use_container_width=True):
+            st.session_state["question_input"] = q
+
 with st.container(border=True):
-    st.markdown("#### :material/search: Pergunta")
-    selected_example = st.pills(
-        "Exemplos rápidos",
-        options=EXAMPLE_QUESTIONS,
-        selection_mode="single",
+    question = st.text_area(
+        "Faça sua pergunta sobre dados fundiários (PB), produção agrícola ou manejo técnico:",
+        value=st.session_state.get("question_input", ""),
+        height=90,
+        placeholder="Ex.: Quais municípios da Paraíba produzem milho e como controlar pragas nessa cultura?",
     )
 
-    col_q, col_k, col_btn = st.columns([4, 0.9, 1.1], vertical_alignment="bottom")
-    with col_q:
-        query_text = st.text_input(
-            "Digite sua pergunta em linguagem natural",
-            value=selected_example or "",
-            placeholder="Ex.: Quais práticas de manejo reduzem perdas por lagarta no milho?",
-        )
-    with col_k:
-        top_k = st.number_input("Top-K", min_value=1, max_value=20, value=5, step=1)
-    with col_btn:
-        run_search = st.button(
-            "Consultar",
-            type="primary",
-            icon=":material/play_arrow:",
-            width="stretch",
-        )
-
-if run_search:
-    if not query_text.strip():
-        st.warning("Digite ou selecione uma pergunta antes de consultar.", icon=":material/warning:")
-    else:
-        with st.spinner("Consultando índice vetorial no Neo4j..."):
-            try:
-                chunks = search_similar_chunks(query_text.strip(), top_k=int(top_k))
-                st.session_state.consultation_chunks = chunks
-                st.session_state.consultation_query = query_text.strip()
-                st.session_state.consultation_error = None
-            except Exception as exc:
-                st.session_state.consultation_chunks = []
-                st.session_state.consultation_error = str(exc)
-
-if st.session_state.get("consultation_error"):
-    st.error(
-        f"Erro ao executar busca vetorial: {st.session_state.consultation_error}",
-        icon=":material/error:",
+    c1, c2, c3 = st.columns([2, 1, 1])
+    mode_label = c1.selectbox(
+        "Modo de Recuperação",
+        [
+            "Híbrido GraphRAG & KAG",
+            "Baseline Vetorial (Apenas Trechos)",
+            "Comparar Híbrido vs. Vector",
+        ],
     )
-elif "consultation_chunks" in st.session_state:
-    chunks = st.session_state.consultation_chunks
-    if not chunks:
-        st.info("Nenhum trecho relevante encontrado para a pergunta.", icon=":material/info:")
-    else:
-        scores = [float(c.get("score", 0.0)) for c in chunks]
-        avg_score = sum(scores) / len(scores)
-        max_score = max(scores)
-        unique_docs = len({c.get("documento_id") for c in chunks if c.get("documento_id")})
+    max_hops = c2.slider("Saltos Multi-hop", 1, 3, 2)
+    top_k = c3.slider("Top-K Trechos", 3, 10, 5)
 
-        col_badge, _ = st.columns([1.5, 3.5])
-        with col_badge:
-            render_confidence_badge(max_score)
+    submitted = st.button("Consultar AgroGraph", type="primary", icon=":material/search:")
 
-        render_kpi_row(
-            [
-                {"label": "Trechos Recuperados", "value": len(chunks)},
-                {"label": "Documentos Distintos", "value": unique_docs},
-                {"label": "Maior Similaridade", "value": f"{max_score:.3f}"},
-                {"label": "Média de Score", "value": f"{avg_score:.3f}"},
-            ]
-        )
 
-        tab_chunks, tab_cypher, tab_subgraph = st.tabs(
-            [
-                ":material/article: Trechos & Fontes",
-                ":material/code: Cypher Gerada",
-                ":material/hub: Subgrafo de Contexto",
-            ]
-        )
+def _render_result_panel(result: dict, title: str):
+    st.subheader(title)
+    confidence = float(result.get("confidence", 0.0))
+    render_confidence_badge(confidence)
 
-        with tab_chunks:
-            for idx, chunk in enumerate(chunks, start=1):
-                doc_id = html.escape(str(chunk.get("documento_id", "Documento")))
-                pagina = html.escape(str(chunk.get("pagina", "-")))
-                score = float(chunk.get("score", 0.0))
-                texto = html.escape(str(chunk.get("texto", "")).strip())
-                st.html(
-                    f"""
-                    <div class="agro-chunk-card">
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                            <strong style="color:#18221B;font-size:0.9rem;">#{idx} • {doc_id} (pág. {pagina})</strong>
-                            <span style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:#1F6E43;background:#E7F4EC;padding:2px 8px;border-radius:999px;">
-                                score {score:.4f}
-                            </span>
-                        </div>
-                        <div style="color:#4B594F;font-size:0.9rem;line-height:1.5;">{texto}</div>
-                    </div>
-                    """
+    render_kpi_row(
+        [
+            {"label": "Confiança", "value": f"{int(confidence * 100)}%"},
+            {"label": "Nós no Subgrafo", "value": len(result.get("subgraph_nodes", []))},
+            {"label": "Caminhos Multi-hop", "value": len(result.get("paths", []))},
+            {"label": "Trechos de Evidência", "value": len(result.get("chunks", []))},
+        ]
+    )
+
+    with st.container(border=True):
+        st.markdown("### :material/auto_awesome: Resposta Fundamentada")
+        st.markdown(result["answer"])
+
+    if result.get("subgraph_nodes"):
+        with st.container(border=True):
+            st.markdown("### :material/hub: Subgrafo de Contexto Utilizado")
+            render_entity_legend()
+            html = render_interactive_graph(
+                result["subgraph_nodes"],
+                result["subgraph_edges"],
+                height=460,
+            )
+            components.html(html, height=480, scrolling=False)
+
+    st.markdown("### :material/fact_check: Painel de Rastreabilidade (Provenance)")
+
+    if result.get("paths"):
+        with st.expander(f"Caminhos do Grafo Utilizados ({len(result['paths'])})", expanded=True, icon=":material/route:"):
+            for p in result["paths"]:
+                st.markdown(f"- `{p}`")
+
+    if result.get("cypher_generated"):
+        with st.expander("Cypher Query Gerada via LLM (Somente Leitura)", icon=":material/code:"):
+            st.code(result["cypher_generated"], language="cypher")
+            if result.get("cypher_error"):
+                st.warning(f"Aviso na execução Cypher: {result['cypher_error']}")
+            elif result.get("cypher_results"):
+                st.dataframe(
+                    pd.DataFrame(result["cypher_results"]),
+                    use_container_width=True,
+                    hide_index=True,
                 )
+            else:
+                st.info("A consulta Cypher retornou 0 registros.")
 
-        with tab_cypher:
-            st.info(
-                "A geração de Cypher read-only (Text-to-Cypher) será exibida aqui após a implementação da Fase C.",
-                icon=":material/info:",
-            )
+    if result.get("subgraph_nodes"):
+        with st.expander(f"Nós Consultados & PageRank ({len(result['subgraph_nodes'])})", icon=":material/account_tree:"):
+            nodes_df = pd.DataFrame([
+                {
+                    "Entidade": n.get("nome"),
+                    "Tipo": n.get("tipo"),
+                    "PageRank": n.get("pagerank", 0.0),
+                    "Score Semente": n.get("seed_score", 0.0),
+                }
+                for n in result["subgraph_nodes"]
+            ])
+            st.dataframe(nodes_df, use_container_width=True, hide_index=True)
 
-        with tab_subgraph:
-            st.info(
-                "O subgrafo de contexto (multi-hop + algoritmo de grafo) será renderizado aqui após a implementação do `rag_pipeline` na Fase C.",
-                icon=":material/info:",
-            )
+    if result.get("chunks"):
+        with st.expander(f"Trechos Documentais Consultados ({len(result['chunks'])})", icon=":material/description:"):
+            for c in result["chunks"]:
+                st.markdown(
+                    f"**{c.get('fonte', 'Documento')}** — Página `{c.get('pagina', '?')}` "
+                    f"| Score: `{float(c.get('score', 0.0)):.4f}`"
+                )
+                st.caption(c.get("texto", ""))
+                st.divider()
+
+
+if submitted:
+    if not question.strip():
+        st.warning("Digite uma pergunta antes de consultar.", icon=":material/warning:")
+        st.stop()
+
+    st.session_state["question_input"] = question
+
+    try:
+        if mode_label == "Comparar Híbrido vs. Vector":
+            with st.spinner("Executando GraphRAG Híbrido e Baseline Vetorial..."):
+                res_hybrid = answer_question(question, mode="hybrid", top_k=top_k, max_hops=max_hops)
+                res_vector = answer_question(question, mode="vector", top_k=top_k, max_hops=max_hops)
+
+            col_h, col_v = st.columns(2)
+            with col_h:
+                _render_result_panel(res_hybrid, "Modo Híbrido (GraphRAG & KAG)")
+            with col_v:
+                _render_result_panel(res_vector, "Baseline Vetorial (Vector Search)")
+        else:
+            mode = "hybrid" if mode_label.startswith("Híbrido") else "vector"
+            with st.spinner("Consultando grafo de conhecimento e gerando resposta fundamentada..."):
+                res = answer_question(question, mode=mode, top_k=top_k, max_hops=max_hops)
+            _render_result_panel(res, f"Resultado — {mode_label}")
+    except Exception as exc:
+        st.error(f"Erro durante a consulta: {exc}", icon=":material/error:")

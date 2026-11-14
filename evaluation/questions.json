@@ -1,0 +1,74 @@
+[
+  {
+    "id": "Q01",
+    "category": "sncr",
+    "question": "Quais são os municípios da Paraíba com maior número de imóveis rurais cadastrados e área total na amostra do SNCR?",
+    "expected_entities": ["Municipio", "ImovelRural", "amostra"]
+  },
+  {
+    "id": "Q02",
+    "category": "sncr",
+    "question": "Qual é a distribuição das condições de detenção de imóveis rurais cadastrados na Paraíba segundo o SNCR?",
+    "expected_entities": ["Proprietario", "condicao"]
+  },
+  {
+    "id": "Q03",
+    "category": "sncr",
+    "question": "Quais imóveis rurais de João Pessoa possuem registros de detenção cadastrados no SNCR e qual a sua área total na amostra?",
+    "expected_entities": ["João Pessoa", "amostra"]
+  },
+  {
+    "id": "Q04",
+    "category": "ibge",
+    "question": "Quais municípios da Paraíba lideram a produção de milho em toneladas segundo os dados integrados do IBGE PAM?",
+    "expected_entities": ["Milho", "PB"]
+  },
+  {
+    "id": "Q05",
+    "category": "ibge",
+    "question": "Quais municípios da Paraíba possuem registros positivos de produção de soja ou café no IBGE?",
+    "expected_entities": ["Soja", "Café"]
+  },
+  {
+    "id": "Q06",
+    "category": "ibge",
+    "question": "Qual é a área plantada e a quantidade produzida de milho nos principais municípios produtores da Paraíba?",
+    "expected_entities": ["Milho", "hectare", "tonelada"]
+  },
+  {
+    "id": "Q07",
+    "category": "embrapa",
+    "question": "Quais estratégias de manejo e rotação de culturas a Embrapa recomenda para a cultura da soja?",
+    "expected_entities": ["Soja", "Embrapa"]
+  },
+  {
+    "id": "Q08",
+    "category": "embrapa",
+    "question": "Quais são as principais pragas que afetam o milho e como deve ser feito o monitoramento segundo os manuais da Embrapa?",
+    "expected_entities": ["Milho", "Lagarta-do-cartucho", "Embrapa"]
+  },
+  {
+    "id": "Q09",
+    "category": "embrapa",
+    "question": "Como deve ser conduzido o manejo integrado de pragas (MIP) para controle de percevejos e lagartas na soja?",
+    "expected_entities": ["Soja", "Manejo Integrado de Pragas"]
+  },
+  {
+    "id": "Q10",
+    "category": "multihop",
+    "question": "Quais municípios da Paraíba produzem milho segundo o IBGE e quais pragas e práticas de controle a Embrapa recomenda para essa cultura?",
+    "expected_entities": ["Milho", "PB", "Embrapa"]
+  },
+  {
+    "id": "Q11",
+    "category": "multihop",
+    "question": "Integrando SNCR, IBGE e Embrapa, como os municípios com maior cadastro rural na Paraíba se conectam à produção de milho ou soja e às práticas recomendadas de manejo de pragas?",
+    "expected_entities": ["Milho", "amostra"]
+  },
+  {
+    "id": "Q12",
+    "category": "multihop",
+    "question": "Quais práticas agrícolas recomendadas pela Embrapa contribuem para a viabilidade técnica do cultivo de milho nos municípios produtores da Paraíba?",
+    "expected_entities": ["Milho", "Embrapa"]
+  }
+]
