@@ -64,7 +64,7 @@ with col_a:
     with st.container(border=True):
         st.subheader(":material/cable: Conexão Neo4j")
         st.caption("Valide a conectividade com o banco antes de iniciar o pipeline.")
-        if st.button("Testar Conexão Aura", icon=":material/cable:", use_container_width=True):
+        if st.button("Testar Conexão Aura", icon=":material/cable:", width="stretch"):
             try:
                 if test_connection():
                     st.session_state.neo4j_status = True
@@ -80,7 +80,7 @@ with col_b:
             "Remove trechos, relações :RELACIONA antigas e entidades de PDFs, "
             "preservando integralmente o subgrafo SNCR."
         )
-        if st.button("Limpar Subgrafo de Conhecimento", icon=":material/delete_sweep:", use_container_width=True):
+        if st.button("Limpar Subgrafo de Conhecimento", icon=":material/delete_sweep:", width="stretch"):
             with st.spinner("Executando limpeza em transações no Neo4j..."):
                 try:
                     stats = clean_knowledge_subgraph()
@@ -93,7 +93,7 @@ with col_c:
     with st.container(border=True):
         st.subheader(":material/schema: Passo 1: Schema LPG")
         st.caption("Cria constraints (id, codigo_ibge) e índices (B-Tree, Fulltext e Vector).")
-        if st.button("Criar/Atualizar Schema", type="primary", icon=":material/build:", use_container_width=True):
+        if st.button("Criar/Atualizar Schema", type="primary", icon=":material/build:", width="stretch"):
             with st.spinner("Aplicando constraints e índices no Neo4j..."):
                 try:
                     create_schema()
@@ -228,16 +228,23 @@ with tab_pdf:
                 disabled=not selected_pdfs,
             ):
                 progress = st.progress(0)
+                status_box = st.empty()
                 results = []
 
                 for idx, pdf_path in enumerate(selected_pdfs):
                     with st.spinner(f"Processando {pdf_path.name} ({idx + 1}/{len(selected_pdfs)})..."):
                         try:
-                            res = ingest_pdf(pdf_path)
+                            res = ingest_pdf(
+                                pdf_path,
+                                progress_callback=lambda msg, i=idx: status_box.caption(
+                                    f"[{i + 1}/{len(selected_pdfs)}] {msg}"
+                                ),
+                            )
                             results.append(res)
                         except Exception as exc:
                             st.error(f"Erro ao processar {pdf_path.name}: {exc}")
                     progress.progress((idx + 1) / len(selected_pdfs))
+                status_box.empty()
 
                 if results:
                     st.success(f"Processamento concluído para {len(results)} documento(s)!")
@@ -252,7 +259,7 @@ with tab_pdf:
                         }
                         for r in results
                     ]
-                    st.dataframe(pd.DataFrame(summary_rows), use_container_width=True, hide_index=True)
+                    st.dataframe(pd.DataFrame(summary_rows), width="stretch", hide_index=True)
 
                     all_merges = [
                         {"documento": r["document"], **m}
@@ -261,4 +268,4 @@ with tab_pdf:
                     ]
                     if all_merges:
                         with st.expander(f"Ver Fusões de Entity Resolution ({len(all_merges)})"):
-                            st.dataframe(pd.DataFrame(all_merges), use_container_width=True, hide_index=True)
+                            st.dataframe(pd.DataFrame(all_merges), width="stretch", hide_index=True)

@@ -1,6 +1,6 @@
 import pandas as pd
+import plotly.express as px
 import streamlit as st
-import streamlit.components.v1 as components
 
 from graph.algorithms import (
     compute_subgraph_pagerank,
@@ -16,8 +16,15 @@ from graph.queries import (
     get_imoveis_por_municipio,
     get_producao_agricola_municipios,
     get_resumo_grafo,
+    get_subgraph,
 )
-from ui import apply_global_styles, render_entity_legend, render_kpi_row, render_page_header
+from ui import (
+    ENTITY_COLORS,
+    apply_global_styles,
+    render_entity_legend,
+    render_kpi_row,
+    render_page_header,
+)
 from utils.graph_vis import render_interactive_graph
 
 apply_global_styles()
@@ -25,14 +32,16 @@ apply_global_styles()
 render_page_header(
     title="Explorador do Grafo & Algoritmos",
     subtitle=(
-        "Métricas estruturais do Neo4j, consultas fundiárias/agrícolas e algoritmos de grafos "
-        "(PageRank, Louvain e Shortest Path) aplicados sobre o subgrafo agronômico."
+        "Exploração visual do Neo4j, métricas estruturais, consultas fundiárias/agrícolas "
+        "e algoritmos de grafos (PageRank, Louvain e Shortest Path)."
     ),
     icon=":material/hub:",
 )
 
-if st.button("Atualizar Estatísticas do Grafo", icon=":material/refresh:"):
-    st.session_state.pop("graph_summary", None)
+col_refresh, _ = st.columns([1.4, 4])
+with col_refresh:
+    if st.button("Atualizar Estatísticas", icon=":material/refresh:", width="stretch"):
+        st.session_state.pop("graph_summary", None)
 
 if "graph_summary" not in st.session_state:
     try:
@@ -59,105 +68,113 @@ render_kpi_row(
     ]
 )
 
-col_l, col_r = st.columns(2)
-with col_l:
-    with st.container(border=True):
-        st.subheader(":material/label: Nós por Rótulo (Labels)")
+with st.expander("Ver distribuição completa de Labels e Relacionamentos no Neo4j", icon=":material/schema:"):
+    col_l, col_r = st.columns(2)
+    with col_l:
         labels_df = pd.DataFrame(labels_data)
         if not labels_df.empty:
-            st.dataframe(labels_df, use_container_width=True, hide_index=True)
+            st.dataframe(labels_df, width="stretch", hide_index=True)
         else:
             st.info("Nenhum nó encontrado no grafo.")
-
-with col_r:
-    with st.container(border=True):
-        st.subheader(":material/arrow_right_alt: Relacionamentos por Tipo")
+    with col_r:
         rels_df = pd.DataFrame(rels_data)
         if not rels_df.empty:
-            st.dataframe(rels_df, use_container_width=True, hide_index=True)
+            st.dataframe(rels_df, width="stretch", hide_index=True)
         else:
             st.info("Nenhum relacionamento encontrado no grafo.")
 
 st.divider()
 
-tab_queries, tab_algos = st.tabs([
-    ":material/table_chart: Consultas Estruturadas (SNCR + IBGE)",
-    ":material/analytics: Algoritmos de Grafo (Subgrafo Agronômico)",
-])
+tab_visual, tab_algos, tab_queries = st.tabs(
+    [
+        ":material/hub: Explorador Visual (Subgrafo)",
+        ":material/analytics: Algoritmos de Grafo",
+        ":material/table_chart: Consultas Analíticas (SNCR + IBGE)",
+    ]
+)
 
-with tab_queries:
+with tab_visual:
     with st.container(border=True):
-        st.info(
-            "**Nota Metodológica:** As consultas fundiárias do SNCR-PB operam sobre a "
-            "**amostra uniforme 1/6 (~39.500 registros)** respeitando o limite do Neo4j Aura Free. "
-            "As estimativas expandidas (×6) são indicadas separadamente.",
-            icon=":material/info:",
-        )
+        c1, c2, c3, c4 = st.columns([1.4, 1.4, 1, 1], vertical_alignment="bottom")
+        with c1:
+            label_filter = st.selectbox(
+                "Filtrar por Label",
+                options=["Todos"] + list(ENTITY_COLORS.keys()),
+            )
+        with c2:
+            municipio_code = st.text_input(
+                "Código IBGE do Município (opcional)",
+                placeholder="Ex.: 2507507",
+            )
+        with c3:
+            node_limit = st.number_input(
+                "Limite de nós",
+                min_value=10,
+                max_value=200,
+                value=60,
+                step=10,
+            )
+        with c4:
+            load_clicked = st.button(
+                "Carregar Grafo",
+                type="primary",
+                icon=":material/refresh:",
+                width="stretch",
+            )
 
-        query_choice = st.selectbox(
-            "Selecione a consulta analítica:",
+    if "explorer_subgraph" not in st.session_state or load_clicked:
+        try:
+            st.session_state.explorer_subgraph = get_subgraph(
+                label=label_filter,
+                codigo_municipio=municipio_code.strip() or None,
+                limit=int(node_limit),
+            )
+            st.session_state.explorer_error = None
+        except Exception as exc:
+            st.session_state.explorer_subgraph = {"nodes": [], "edges": []}
+            st.session_state.explorer_error = str(exc)
+
+    if st.session_state.get("explorer_error"):
+        st.error(f"Erro ao consultar subgrafo: {st.session_state.explorer_error}", icon=":material/error:")
+    else:
+        subgraph = st.session_state.explorer_subgraph
+        sub_nodes = subgraph.get("nodes", [])
+        sub_edges = subgraph.get("edges", [])
+        present_groups = sorted({n.get("group", "Entidade") for n in sub_nodes})
+
+        render_kpi_row(
             [
-                "1. Quantidade e área de imóveis rurais por município",
-                "2. Imóveis rurais com área superior a um limite (ha)",
-                "3. Imóveis e detentores por código IBGE do município",
-                "4. Distribuição das condições de detenção",
-                "5. Imóveis por condição de detenção",
-                "6. Produção agrícola municipal na Paraíba (IBGE PAM)",
-            ],
+                {"label": "Nós Exibidos", "value": len(sub_nodes)},
+                {"label": "Arestas Exibidas", "value": len(sub_edges)},
+                {"label": "Labels Distintos", "value": len(present_groups)},
+            ]
         )
 
-        if query_choice.startswith("1."):
-            limit = st.slider("Top municípios", 5, 50, 15)
-            if st.button("Executar Consulta 1", type="primary", icon=":material/play_arrow:"):
-                rows = get_imoveis_por_municipio(limit=limit)
-                df = pd.DataFrame(rows)
-                if not df.empty:
-                    df["imoveis_estimados_total (x6)"] = df["total_imoveis"] * 6
-                    df["area_estimada_ha (x6)"] = (df["area_total_cadastrada"] * 6).round(2)
-                st.dataframe(df, use_container_width=True, hide_index=True)
+        if present_groups:
+            render_entity_legend(present_groups)
 
-        elif query_choice.startswith("2."):
-            c1, c2 = st.columns(2)
-            min_area = c1.number_input("Área mínima (hectares)", min_value=0.0, value=500.0, step=100.0)
-            limit = c2.slider("Limite de resultados", 5, 100, 20)
-            if st.button("Executar Consulta 2", type="primary", icon=":material/play_arrow:"):
-                rows = get_imoveis_por_area(min_area=min_area, limit=limit)
-                st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
-
-        elif query_choice.startswith("3."):
-            c1, c2 = st.columns(2)
-            cod_mun = c1.text_input("Código IBGE do município (ex.: 2507507 para João Pessoa)", value="2507507")
-            limit = c2.slider("Limite", 5, 100, 20)
-            if st.button("Executar Consulta 3", type="primary", icon=":material/play_arrow:"):
-                rows = get_imoveis_com_detentores(codigo_municipio=cod_mun.strip(), limit=limit)
-                st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
-
-        elif query_choice.startswith("4."):
-            if st.button("Executar Consulta 4", type="primary", icon=":material/play_arrow:"):
-                rows = get_distribuicao_condicoes_detencao()
-                st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
-
-        elif query_choice.startswith("5."):
-            c1, c2 = st.columns(2)
-            condicao = c1.text_input("Condição da pessoa (ex.: Proprietario, Posseiro, Condomino)", value="Proprietario")
-            limit = c2.slider("Limite", 5, 100, 20)
-            if st.button("Executar Consulta 5", type="primary", icon=":material/play_arrow:"):
-                rows = get_imoveis_por_condicao_detencao(condicao=condicao, limit=limit)
-                st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
-
-        elif query_choice.startswith("6."):
-            c1, c2 = st.columns(2)
-            cultura = c1.selectbox("Cultura Agrícola", ["Todas", "Milho", "Soja", "Café"])
-            limit = c2.slider("Top municípios", 5, 50, 20)
-            if st.button("Executar Consulta IBGE", type="primary", icon=":material/play_arrow:"):
-                rows = get_producao_agricola_municipios(cultura=cultura, limit=limit)
-                st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+        if not sub_nodes:
+            st.info("Nenhum nó encontrado para os filtros selecionados.", icon=":material/info:")
+        else:
+            col_canvas, col_details = st.columns([2.35, 1], gap="medium")
+            with col_canvas:
+                graph_html = render_interactive_graph(sub_nodes, sub_edges, height=560)
+                st.iframe(graph_html, height=580)
+            with col_details:
+                with st.container(border=True):
+                    st.subheader("Distribuição no Subgrafo")
+                    dist_df = (
+                        pd.DataFrame([{"Label": n.get("group", "Entidade")} for n in sub_nodes])
+                        .value_counts()
+                        .reset_index(name="Quantidade")
+                    )
+                    st.dataframe(dist_df, width="stretch", hide_index=True)
+                    st.caption("Clique em qualquer nó no grafo para inspecionar suas propriedades.")
 
 with tab_algos:
     with st.container(border=True):
         st.caption(
-            "Executados exclusivamente sobre o subgrafo agronômico/conhecimento "
-            "(excluindo nós SNCR de alta cardinalidade)."
+            "Executados sobre o subgrafo agronômico/conhecimento (excluindo nós SNCR de alta cardinalidade)."
         )
         render_entity_legend()
 
@@ -176,15 +193,26 @@ with tab_algos:
                     if not ranked:
                         st.warning("Subgrafo agronômico vazio. Execute a ingestão IBGE/PDFs primeiro.")
                     else:
-                        st.dataframe(
-                            pd.DataFrame(ranked)[["nome", "tipo", "pagerank", "descricao"]],
-                            use_container_width=True,
-                            hide_index=True,
-                        )
+                        ranked_df = pd.DataFrame(ranked)[["nome", "tipo", "pagerank", "descricao"]]
+                        col_pr_chart, col_pr_table = st.columns([1.1, 1.3], gap="medium")
+                        with col_pr_chart:
+                            fig_pr = px.bar(
+                                ranked_df.head(10).iloc[::-1],
+                                x="pagerank",
+                                y="nome",
+                                orientation="h",
+                                color_discrete_sequence=["#1F6E43"],
+                                labels={"pagerank": "Score PageRank", "nome": "Entidade"},
+                            )
+                            fig_pr.update_layout(margin=dict(l=10, r=10, t=20, b=10), height=340)
+                            st.plotly_chart(fig_pr, width="stretch")
+                        with col_pr_table:
+                            st.dataframe(ranked_df, width="stretch", hide_index=True, height=340)
+
                         top_ids = {n["id"] for n in ranked}
                         sub_edges = [e for e in edges if e["source_id"] in top_ids and e["target_id"] in top_ids]
-                        html = render_interactive_graph(ranked, sub_edges, height=500)
-                        components.html(html, height=520, scrolling=False)
+                        graph_html = render_interactive_graph(ranked, sub_edges, height=500)
+                        st.iframe(graph_html, height=520)
 
         elif algo_choice == "Comunidades (Louvain)":
             if st.button("Detectar Comunidades (Louvain)", type="primary", icon=":material/play_arrow:"):
@@ -201,14 +229,26 @@ with tab_algos:
                             for m in comm["members"]:
                                 comm_map[m["id"]] = cid
                             sample_names = ", ".join(m["nome"] for m in comm["members"][:8])
-                            rows.append({
-                                "Comunidade": f"Cluster #{cid}",
-                                "Tamanho": comm["size"],
-                                "Principais Entidades": sample_names,
-                            })
-                        st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
-                        html = render_interactive_graph(nodes[:120], edges, height=520, community_map=comm_map)
-                        components.html(html, height=540, scrolling=False)
+                            rows.append(
+                                {
+                                    "Comunidade": f"Cluster #{cid}",
+                                    "Tamanho": comm["size"],
+                                    "Principais Entidades": sample_names,
+                                }
+                            )
+                        comm_df = pd.DataFrame(rows)
+                        fig_c = px.bar(
+                            comm_df,
+                            x="Comunidade",
+                            y="Tamanho",
+                            color_discrete_sequence=["#1E6B8C"],
+                        )
+                        fig_c.update_layout(margin=dict(l=10, r=10, t=20, b=10), height=260)
+                        st.plotly_chart(fig_c, width="stretch")
+                        st.dataframe(comm_df, width="stretch", hide_index=True)
+
+                        graph_html = render_interactive_graph(nodes[:120], edges, height=520, community_map=comm_map)
+                        st.iframe(graph_html, height=540)
 
         else:
             nodes, _ = fetch_agronomic_subgraph(limit=300)
@@ -240,6 +280,96 @@ with tab_algos:
                                 st.info("Nenhum caminho encontrado dentro do limite de saltos.")
                             else:
                                 st.success(f"Caminho encontrado em **{res['hops']} salto(s)**!")
-                                html = render_interactive_graph(res["nodes"], res["edges"], height=420)
-                                components.html(html, height=440, scrolling=False)
-                                st.json(res["edges"])
+                                graph_html = render_interactive_graph(res["nodes"], res["edges"], height=440)
+                                st.iframe(graph_html, height=460)
+                                with st.expander("Detalhes das arestas no caminho"):
+                                    st.json(res["edges"])
+
+with tab_queries:
+    with st.container(border=True):
+        st.info(
+            "**Nota Metodológica:** As consultas fundiárias do SNCR-PB operam sobre a "
+            "**amostra uniforme 1/6 (~39.500 registros)** respeitando o limite do Neo4j Aura Free. "
+            "As estimativas expandidas (×6) são indicadas separadamente.",
+            icon=":material/info:",
+        )
+
+        query_choice = st.selectbox(
+            "Selecione a consulta analítica:",
+            [
+                "1. Quantidade e área de imóveis rurais por município",
+                "2. Imóveis rurais com área superior a um limite (ha)",
+                "3. Imóveis e detentores por código IBGE do município",
+                "4. Distribuição das condições de detenção",
+                "5. Imóveis por condição de detenção",
+                "6. Produção agrícola municipal na Paraíba (IBGE PAM)",
+            ],
+        )
+
+        if query_choice.startswith("1."):
+            limit = st.slider("Top municípios", 5, 50, 15)
+            if st.button("Executar Consulta 1", type="primary", icon=":material/play_arrow:"):
+                rows = get_imoveis_por_municipio(limit=limit)
+                df = pd.DataFrame(rows)
+                if not df.empty:
+                    df["imoveis_estimados_total (x6)"] = df["total_imoveis"] * 6
+                    df["area_estimada_ha (x6)"] = (df["area_total_cadastrada"] * 6).round(2)
+                    fig = px.bar(
+                        df,
+                        x="municipio",
+                        y="total_imoveis",
+                        color_discrete_sequence=["#1F6E43"],
+                        labels={"municipio": "Município", "total_imoveis": "Imóveis (Amostra)"},
+                    )
+                    fig.update_layout(margin=dict(l=10, r=10, t=20, b=10), height=300)
+                    st.plotly_chart(fig, width="stretch")
+                st.dataframe(df, width="stretch", hide_index=True)
+
+        elif query_choice.startswith("2."):
+            c1, c2 = st.columns(2)
+            min_area = c1.number_input("Área mínima (hectares)", min_value=0.0, value=500.0, step=100.0)
+            limit = c2.slider("Limite de resultados", 5, 100, 20)
+            if st.button("Executar Consulta 2", type="primary", icon=":material/play_arrow:"):
+                rows = get_imoveis_por_area(min_area=min_area, limit=limit)
+                st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
+
+        elif query_choice.startswith("3."):
+            c1, c2 = st.columns(2)
+            cod_mun = c1.text_input("Código IBGE do município (ex.: 2507507 para João Pessoa)", value="2507507")
+            limit = c2.slider("Limite", 5, 100, 20)
+            if st.button("Executar Consulta 3", type="primary", icon=":material/play_arrow:"):
+                rows = get_imoveis_com_detentores(codigo_municipio=cod_mun.strip(), limit=limit)
+                st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
+
+        elif query_choice.startswith("4."):
+            if st.button("Executar Consulta 4", type="primary", icon=":material/play_arrow:"):
+                rows = get_distribuicao_condicoes_detencao()
+                df = pd.DataFrame(rows)
+                if not df.empty and "condicao_pessoa" in df.columns and "total" in df.columns:
+                    fig = px.bar(
+                        df,
+                        x="condicao_pessoa",
+                        y="total",
+                        color_discrete_sequence=["#1E6B8C"],
+                        labels={"condicao_pessoa": "Condição", "total": "Registros"},
+                    )
+                    fig.update_layout(margin=dict(l=10, r=10, t=20, b=10), height=280)
+                    st.plotly_chart(fig, width="stretch")
+                st.dataframe(df, width="stretch", hide_index=True)
+
+        elif query_choice.startswith("5."):
+            c1, c2 = st.columns(2)
+            condicao = c1.text_input("Condição da pessoa (ex.: Proprietario, Posseiro, Condomino)", value="Proprietario")
+            limit = c2.slider("Limite", 5, 100, 20)
+            if st.button("Executar Consulta 5", type="primary", icon=":material/play_arrow:"):
+                rows = get_imoveis_por_condicao_detencao(condicao=condicao, limit=limit)
+                st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
+
+        elif query_choice.startswith("6."):
+            c1, c2 = st.columns(2)
+            cultura = c1.selectbox("Cultura Agrícola", ["Todas", "Milho", "Soja", "Café"])
+            limit = c2.slider("Top municípios", 5, 50, 20)
+            if st.button("Executar Consulta IBGE", type="primary", icon=":material/play_arrow:"):
+                rows = get_producao_agricola_municipios(cultura=cultura, limit=limit)
+                df = pd.DataFrame(rows)
+                st.dataframe(df, width="stretch", hide_index=True)

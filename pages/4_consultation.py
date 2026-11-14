@@ -1,6 +1,6 @@
+import html
 import pandas as pd
 import streamlit as st
-import streamlit.components.v1 as components
 
 from retrieval.kag_engine import answer_question
 from ui import (
@@ -23,21 +23,25 @@ render_page_header(
     icon=":material/travel_explore:",
 )
 
-SUGGESTED_QUESTIONS = [
-    "Quais municípios da Paraíba produzem milho e quais pragas afetam essa cultura segundo a Embrapa?",
-    "Como controlar a lagarta-do-cartucho no milho e quais práticas agrícolas são recomendadas?",
-    "Quais estratégias de manejo e rotação de culturas são recomendadas para a soja?",
-    "Quais são os 5 municípios da Paraíba com maior área rural cadastrada na amostra SNCR e o que eles produzem?",
-    "Quais práticas reduzem danos por percevejo-marrom na cultura da soja?",
-]
-
-with st.expander("Sugestões de perguntas multi-hop para demonstração", icon=":material/lightbulb:"):
-    cols = st.columns(len(SUGGESTED_QUESTIONS))
-    for idx, q in enumerate(SUGGESTED_QUESTIONS):
-        if cols[idx].button(f"Exemplo {idx + 1}", key=f"ex_{idx}", use_container_width=True):
-            st.session_state["question_input"] = q
+SUGGESTED_QUESTIONS = {
+    "Milho & Pragas (PB)": "Quais municípios da Paraíba produzem milho e quais pragas afetam essa cultura segundo a Embrapa?",
+    "Lagarta-do-cartucho": "Como controlar a lagarta-do-cartucho no milho e quais práticas agrícolas são recomendadas?",
+    "Manejo & Rotação (Soja)": "Quais estratégias de manejo e rotação de culturas são recomendadas para a soja?",
+    "Top Áreas SNCR × Produção": "Quais são os 5 municípios da Paraíba com maior área rural cadastrada na amostra SNCR e o que eles produzem?",
+    "Percevejo-marrom": "Quais práticas reduzem danos por percevejo-marrom na cultura da soja?",
+}
 
 with st.container(border=True):
+    st.markdown("#### :material/search: Pergunta")
+    selected_pill = st.pills(
+        "Sugestões multi-hop",
+        options=list(SUGGESTED_QUESTIONS.keys()),
+        selection_mode="single",
+    )
+    if selected_pill and st.session_state.get("last_pill") != selected_pill:
+        st.session_state["question_input"] = SUGGESTED_QUESTIONS[selected_pill]
+        st.session_state["last_pill"] = selected_pill
+
     question = st.text_area(
         "Faça sua pergunta sobre dados fundiários (PB), produção agrícola ou manejo técnico:",
         value=st.session_state.get("question_input", ""),
@@ -45,7 +49,7 @@ with st.container(border=True):
         placeholder="Ex.: Quais municípios da Paraíba produzem milho e como controlar pragas nessa cultura?",
     )
 
-    c1, c2, c3 = st.columns([2, 1, 1])
+    c1, c2, c3, c4 = st.columns([2, 1, 1, 1.2], vertical_alignment="bottom")
     mode_label = c1.selectbox(
         "Modo de Recuperação",
         [
@@ -56,11 +60,15 @@ with st.container(border=True):
     )
     max_hops = c2.slider("Saltos Multi-hop", 1, 3, 2)
     top_k = c3.slider("Top-K Trechos", 3, 10, 5)
+    submitted = c4.button(
+        "Consultar",
+        type="primary",
+        icon=":material/play_arrow:",
+        width="stretch",
+    )
 
-    submitted = st.button("Consultar AgroGraph", type="primary", icon=":material/search:")
 
-
-def _render_result_panel(result: dict, title: str):
+def _render_result_panel(result: dict, title: str, compact: bool = False) -> None:
     st.subheader(title)
     confidence = float(result.get("confidence", 0.0))
     render_confidence_badge(confidence)
@@ -76,62 +84,91 @@ def _render_result_panel(result: dict, title: str):
 
     with st.container(border=True):
         st.markdown("### :material/auto_awesome: Resposta Fundamentada")
-        st.markdown(result["answer"])
+        st.markdown(result.get("answer", ""))
 
-    if result.get("subgraph_nodes"):
+    sub_nodes = result.get("subgraph_nodes", [])
+    sub_edges = result.get("subgraph_edges", [])
+    if sub_nodes:
         with st.container(border=True):
             st.markdown("### :material/hub: Subgrafo de Contexto Utilizado")
-            render_entity_legend()
-            html = render_interactive_graph(
-                result["subgraph_nodes"],
-                result["subgraph_edges"],
-                height=460,
-            )
-            components.html(html, height=480, scrolling=False)
+            present_types = sorted({str(n.get("tipo") or n.get("type") or "Entidade") for n in sub_nodes})
+            render_entity_legend(present_types)
+            graph_height = 400 if compact else 480
+            graph_html = render_interactive_graph(sub_nodes, sub_edges, height=graph_height)
+            st.iframe(graph_html, height=graph_height + 20)
 
-    st.markdown("### :material/fact_check: Painel de Rastreabilidade (Provenance)")
+    st.markdown("### :material/fact_check: Rastreabilidade & Proveniência")
+    tab_chunks, tab_paths, tab_cypher, tab_nodes = st.tabs(
+        [
+            f":material/article: Trechos ({len(result.get('chunks', []))})",
+            f":material/route: Caminhos ({len(result.get('paths', []))})",
+            ":material/code: Cypher Gerada",
+            f":material/account_tree: Nós & PageRank ({len(sub_nodes)})",
+        ]
+    )
 
-    if result.get("paths"):
-        with st.expander(f"Caminhos do Grafo Utilizados ({len(result['paths'])})", expanded=True, icon=":material/route:"):
-            for p in result["paths"]:
+    with tab_chunks:
+        chunks = result.get("chunks", [])
+        if not chunks:
+            st.info("Nenhum trecho documental recuperado.", icon=":material/info:")
+        else:
+            for idx, c in enumerate(chunks, start=1):
+                fonte = html.escape(str(c.get("fonte") or c.get("documento_id") or "Documento"))
+                pagina = html.escape(str(c.get("pagina", "?")))
+                score = float(c.get("score", 0.0))
+                texto = html.escape(str(c.get("texto", "")).strip())
+                st.html(
+                    f"""
+                    <div class="agro-chunk-card">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                            <strong style="color:#18221B;font-size:0.9rem;">#{idx} • {fonte} (pág. {pagina})</strong>
+                            <span style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:#1F6E43;background:#E7F4EC;padding:2px 8px;border-radius:999px;">
+                                score {score:.4f}
+                            </span>
+                        </div>
+                        <div style="color:#4B594F;font-size:0.9rem;line-height:1.5;">{texto}</div>
+                    </div>
+                    """
+                )
+
+    with tab_paths:
+        paths = result.get("paths", [])
+        if not paths:
+            st.info("Nenhum caminho multi-hop registrado para este modo.", icon=":material/info:")
+        else:
+            for p in paths:
                 st.markdown(f"- `{p}`")
 
-    if result.get("cypher_generated"):
-        with st.expander("Cypher Query Gerada via LLM (Somente Leitura)", icon=":material/code:"):
-            st.code(result["cypher_generated"], language="cypher")
+    with tab_cypher:
+        cypher = result.get("cypher_generated")
+        if not cypher:
+            st.info("Nenhuma query Cypher gerada para esta consulta.", icon=":material/info:")
+        else:
+            st.badge("Read-Only Validated", icon=":material/verified_user:", color="green")
+            st.code(cypher, language="cypher")
             if result.get("cypher_error"):
-                st.warning(f"Aviso na execução Cypher: {result['cypher_error']}")
+                st.warning(f"Aviso na execução Cypher: {result['cypher_error']}", icon=":material/warning:")
             elif result.get("cypher_results"):
-                st.dataframe(
-                    pd.DataFrame(result["cypher_results"]),
-                    use_container_width=True,
-                    hide_index=True,
-                )
+                st.dataframe(pd.DataFrame(result["cypher_results"]), width="stretch", hide_index=True)
             else:
                 st.info("A consulta Cypher retornou 0 registros.")
 
-    if result.get("subgraph_nodes"):
-        with st.expander(f"Nós Consultados & PageRank ({len(result['subgraph_nodes'])})", icon=":material/account_tree:"):
-            nodes_df = pd.DataFrame([
-                {
-                    "Entidade": n.get("nome"),
-                    "Tipo": n.get("tipo"),
-                    "PageRank": n.get("pagerank", 0.0),
-                    "Score Semente": n.get("seed_score", 0.0),
-                }
-                for n in result["subgraph_nodes"]
-            ])
-            st.dataframe(nodes_df, use_container_width=True, hide_index=True)
-
-    if result.get("chunks"):
-        with st.expander(f"Trechos Documentais Consultados ({len(result['chunks'])})", icon=":material/description:"):
-            for c in result["chunks"]:
-                st.markdown(
-                    f"**{c.get('fonte', 'Documento')}** — Página `{c.get('pagina', '?')}` "
-                    f"| Score: `{float(c.get('score', 0.0)):.4f}`"
-                )
-                st.caption(c.get("texto", ""))
-                st.divider()
+    with tab_nodes:
+        if not sub_nodes:
+            st.info("Nenhum nó no subgrafo para este modo.", icon=":material/info:")
+        else:
+            nodes_df = pd.DataFrame(
+                [
+                    {
+                        "Entidade": n.get("nome"),
+                        "Tipo": n.get("tipo"),
+                        "PageRank": round(float(n.get("pagerank", 0.0)), 4),
+                        "Score Semente": round(float(n.get("seed_score", 0.0)), 4),
+                    }
+                    for n in sub_nodes
+                ]
+            )
+            st.dataframe(nodes_df, width="stretch", hide_index=True)
 
 
 if submitted:
@@ -147,11 +184,11 @@ if submitted:
                 res_hybrid = answer_question(question, mode="hybrid", top_k=top_k, max_hops=max_hops)
                 res_vector = answer_question(question, mode="vector", top_k=top_k, max_hops=max_hops)
 
-            col_h, col_v = st.columns(2)
+            col_h, col_v = st.columns(2, gap="large")
             with col_h:
-                _render_result_panel(res_hybrid, "Modo Híbrido (GraphRAG & KAG)")
+                _render_result_panel(res_hybrid, "Modo Híbrido (GraphRAG & KAG)", compact=True)
             with col_v:
-                _render_result_panel(res_vector, "Baseline Vetorial (Vector Search)")
+                _render_result_panel(res_vector, "Baseline Vetorial (Vector Search)", compact=True)
         else:
             mode = "hybrid" if mode_label.startswith("Híbrido") else "vector"
             with st.spinner("Consultando grafo de conhecimento e gerando resposta fundamentada..."):

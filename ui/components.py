@@ -48,11 +48,26 @@ def render_confidence_badge(score: float) -> None:
 
 def render_entity_legend(labels: list[str] | None = None) -> None:
     """Renderiza legenda horizontal com as cores semânticas dos nós do grafo."""
-    target_labels = labels or list(ENTITY_COLORS.keys())
+    default_labels = [
+        "ImovelRural",
+        "Municipio",
+        "Detentor",
+        "CulturaAgricola",
+        "Praga",
+        "PraticaAgricola",
+        "ProdutoAgricola",
+        "CondicaoAmbiental",
+        "Documento",
+    ]
+    target_labels = labels if labels else default_labels
     pills = []
+    seen_display = set()
     for label in target_labels:
         cfg = ENTITY_COLORS.get(label, ENTITY_COLORS["Entidade"])
         display = cfg.get("label", label)
+        if display in seen_display:
+            continue
+        seen_display.add(display)
         pills.append(
             f'<span class="agro-legend-pill">'
             f'<span class="agro-legend-dot" style="background-color:{cfg["fill"]};"></span>'

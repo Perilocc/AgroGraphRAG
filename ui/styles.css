@@ -5,6 +5,14 @@
     padding-bottom: 2.5rem;
 }
 
+/* Logo maior e mais legível na sidebar aberta */
+[data-testid="stSidebarHeader"] img,
+[data-testid="stLogo"] {
+    height: 2.6rem !important;
+    max-height: 2.6rem !important;
+    width: auto !important;
+}
+
 /* Tipografia tabular para KPIs e tabelas */
 [data-testid="stMetricValue"] {
     font-variant-numeric: tabular-nums;
