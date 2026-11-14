@@ -1,0 +1,51 @@
+[client]
+showSidebarNavigation = true
+
+[theme]
+base = "light"
+primaryColor = "#1F6E43"
+backgroundColor = "#F6F7F3"
+secondaryBackgroundColor = "#EDF1E8"
+textColor = "#18221B"
+
+# Cores semânticas
+greenColor = "#1E7E48"
+orangeColor = "#B86B11"
+redColor = "#C0392B"
+blueColor = "#1E6B8C"
+yellowColor = "#D48817"
+violetColor = "#7D5BA6"
+grayColor = "#6E7C72"
+
+# Tipografia (Google Fonts)
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+headingFont = "Plus Jakarta Sans:https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700&display=swap"
+codeFont = "JetBrains Mono:https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap"
+
+baseFontSize = 15
+metricValueFontSize = "1.75rem"
+metricValueFontWeight = 700
+headingFontSizes = ["1.875rem", "1.375rem", "1.0625rem"]
+headingFontWeights = [700, 600, 600]
+
+# Geometria e bordas
+baseRadius = "0.5rem"
+buttonRadius = "0.5rem"
+borderColor = "#DCE3D5"
+dataframeBorderColor = "#DCE3D5"
+dataframeHeaderBackgroundColor = "#EDF1E8"
+dataframeHeaderTextColor = "#18221B"
+showWidgetBorder = true
+showSidebarBorder = true
+
+# Paletas de gráficos
+chartCategoricalColors = ["#1F6E43", "#1E6B8C", "#D48817", "#7D5BA6", "#2F7A78", "#C0392B", "#5B6B5E"]
+chartSequentialColors = ["#E7F4EC", "#A7DAB9", "#52B078", "#1F6E43", "#134228"]
+
+[theme.sidebar]
+primaryColor = "#4BAE74"
+backgroundColor = "#13241A"
+secondaryBackgroundColor = "#1C3326"
+textColor = "#EDF2EC"
+borderColor = "#274132"
+dataframeHeaderBackgroundColor = "#1C3326"

@@ -1,0 +1,104 @@
+/* AgroGraph Intelligence — Ajustes finos complementares ao .streamlit/config.toml */
+
+.block-container {
+    padding-top: 4rem !important;
+    padding-bottom: 2.5rem;
+}
+
+/* Tipografia tabular para KPIs e tabelas */
+[data-testid="stMetricValue"] {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+}
+
+[data-testid="stMetricLabel"] {
+    color: #4B594F;
+    font-weight: 500;
+}
+
+/* Headings com tracking editorial */
+h1, h2, h3 {
+    letter-spacing: -0.02em;
+}
+
+/* Hero card da página inicial */
+.agro-hero {
+    background: linear-gradient(135deg, #FFFFFF 0%, #EDF1E8 100%);
+    border: 1px solid #DCE3D5;
+    border-radius: 0.75rem;
+    padding: 1.75rem 2rem;
+    margin-bottom: 1.25rem;
+}
+
+.agro-hero-kicker {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #1F6E43;
+    background-color: #E7F4EC;
+    padding: 0.25rem 0.65rem;
+    border-radius: 999px;
+    margin-bottom: 0.75rem;
+}
+
+.agro-hero h1 {
+    margin: 0 0 0.5rem 0;
+    font-size: 2rem;
+    color: #18221B;
+}
+
+.agro-hero p {
+    margin: 0;
+    color: #4B594F;
+    font-size: 1rem;
+    line-height: 1.55;
+    max-width: 68ch;
+}
+
+/* Legenda semântica do grafo */
+.agro-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin: 0.25rem 0 0.75rem 0;
+}
+
+.agro-legend-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.22rem 0.6rem;
+    border-radius: 999px;
+    background-color: #FFFFFF;
+    border: 1px solid #DCE3D5;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: #18221B;
+}
+
+.agro-legend-dot {
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 999px;
+    display: inline-block;
+}
+
+/* Card de trecho citado (proveniência) */
+.agro-chunk-card {
+    background-color: #FFFFFF;
+    border: 1px solid #DCE3D5;
+    border-left: 3px solid #1F6E43;
+    border-radius: 0.5rem;
+    padding: 0.85rem 1rem;
+    margin-bottom: 0.65rem;
+}
+
+/* Enquadramento do canvas PyVis */
+iframe[title="st.iframe"],
+.stHtml iframe {
+    border: 1px solid #DCE3D5;
+    border-radius: 0.5rem;
+    background-color: #FFFFFF;
+}
