@@ -1,0 +1,1623 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AgroGraph Intelligence: GraphRAG &amp; KAG</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap"
+    rel="stylesheet" />
+  <style>
+    :root {
+      --bg-dark: #13261C;
+      --bg-dark-2: #1C3326;
+      --bg-light: #F4F8F4;
+      --surface: #FFFFFF;
+      --border: #D5E2D7;
+      --agro-green: #1F6E43;
+      --agro-leaf: #4BAE74;
+      --agro-amber: #D48817;
+      --agro-blue: #1E6B8C;
+      --agro-red: #C0392B;
+      --text-main: #14281D;
+      --text-muted: #455C4E;
+      --text-light: #EDF2EC;
+      --text-light-muted: #B6C9BD;
+      --font-display: 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
+      --font-sans: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', 'Consolas', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #0D1B14;
+      font-family: var(--font-sans);
+      color: var(--text-main);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Deck Viewport */
+    .deck {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      padding: 36px 56px 32px;
+      background: var(--bg-light);
+      opacity: 0;
+      visibility: hidden;
+      transform: translateX(32px);
+      transition: opacity 0.32s ease, transform 0.32s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.32s;
+      overflow: hidden;
+    }
+
+    .slide.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(0);
+      z-index: 2;
+    }
+
+    .slide.prev {
+      transform: translateX(-32px);
+    }
+
+    /* Capa (Slide 1) */
+    .slide-cover {
+      background: radial-gradient(circle at 82% 20%, rgba(75, 174, 116, 0.2), transparent 45%),
+        radial-gradient(circle at 15% 85%, rgba(212, 136, 23, 0.15), transparent 40%),
+        linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-dark-2) 100%);
+      color: var(--text-light);
+      justify-content: space-between;
+      padding: 44px 68px 44px;
+    }
+
+    .cover-bg-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      opacity: 0.24;
+    }
+
+    .cover-top {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      padding: 10px 22px 10px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(75, 174, 116, 0.42);
+      backdrop-filter: blur(8px);
+    }
+
+    .brand-pill span {
+      font-family: var(--font-display);
+      font-size: clamp(1rem, 1.2vw, 1.25rem);
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      color: var(--text-light);
+    }
+
+    .date-pill {
+      font-family: var(--font-mono);
+      font-size: clamp(1rem, 1.15vw, 1.2rem);
+      font-weight: 700;
+      color: var(--agro-leaf);
+      background: rgba(75, 174, 116, 0.14);
+      border: 1px solid rgba(75, 174, 116, 0.35);
+      padding: 10px 20px;
+      border-radius: 999px;
+    }
+
+    .cover-center {
+      position: relative;
+      z-index: 1;
+      max-width: 1320px;
+      margin: auto 0;
+    }
+
+    .cover-kicker {
+      display: inline-block;
+      font-size: clamp(0.95rem, 1.15vw, 1.2rem);
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--agro-leaf);
+      margin-bottom: 18px;
+    }
+
+    .cover-title {
+      font-family: var(--font-display);
+      font-size: clamp(2.6rem, 4.5vw, 4.35rem);
+      font-weight: 800;
+      line-height: 1.12;
+      letter-spacing: -0.01em;
+      color: #FFFFFF;
+      margin-bottom: 24px;
+    }
+
+    .cover-title .accent {
+      color: var(--agro-leaf);
+    }
+
+    .cover-subtitle {
+      font-size: clamp(1.25rem, 1.75vw, 1.85rem);
+      line-height: 1.45;
+      color: var(--text-light-muted);
+      max-width: 1050px;
+    }
+
+    .cover-subtitle em {
+      color: #FFFFFF;
+      font-style: italic;
+    }
+
+    .cover-footer {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+      padding-top: 26px;
+      border-top: 1px solid rgba(237, 242, 236, 0.16);
+    }
+
+    .team-block .label {
+      font-size: 0.92rem;
+      text-transform: uppercase;
+      color: var(--text-light-muted);
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    .team-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .team-chip {
+      font-size: clamp(0.98rem, 1.15vw, 1.18rem);
+      font-weight: 600;
+      color: #FFFFFF;
+      background: rgba(255, 255, 255, 0.09);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      padding: 8px 16px;
+      border-radius: 10px;
+    }
+
+    .repo-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--font-mono);
+      font-size: clamp(0.95rem, 1.1vw, 1.12rem);
+      color: #EDF2EC;
+      text-decoration: none;
+      background: rgba(31, 110, 67, 0.5);
+      border: 1px solid rgba(75, 174, 116, 0.55);
+      padding: 12px 18px;
+      border-radius: 12px;
+      transition: background 0.2s ease, transform 0.2s ease;
+    }
+
+    .repo-link:hover {
+      background: rgba(31, 110, 67, 0.8);
+      transform: translateY(-1px);
+    }
+
+    /* Header padrão dos slides internos */
+    .slide-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .section-tag {
+      font-family: var(--font-mono);
+      font-size: clamp(0.88rem, 1vw, 1.05rem);
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--agro-green);
+      background: #E2F2E7;
+      border: 1px solid #B7DEC4;
+      padding: 6px 14px;
+      border-radius: 8px;
+      white-space: nowrap;
+    }
+
+    .slide-title {
+      font-family: var(--font-display);
+      font-size: clamp(1.75rem, 2.75vw, 2.75rem);
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      color: var(--text-main);
+    }
+
+    .header-brand {
+      font-family: var(--font-display);
+      font-size: clamp(0.95rem, 1.1vw, 1.15rem);
+      font-weight: 700;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    /* Corpo dos slides */
+    .slide-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-evenly;
+      gap: 22px;
+      min-height: 0;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      align-items: stretch;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 26px;
+      align-items: stretch;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 28px 30px;
+      box-shadow: 0 8px 24px rgba(20, 40, 29, 0.05);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .card-accent-top {
+      border-top: 5px solid var(--agro-green);
+    }
+
+    .card-amber-top {
+      border-top: 5px solid var(--agro-amber);
+    }
+
+    .card-red-top {
+      border-top: 5px solid var(--agro-red);
+    }
+
+    .card-blue-top {
+      border-top: 5px solid var(--agro-blue);
+    }
+
+    .card-icon {
+      width: 54px;
+      height: 54px;
+      border-radius: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.65rem;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .icon-red {
+      background: #FDECEB;
+      color: var(--agro-red);
+    }
+
+    .icon-amber {
+      background: #FDF3E2;
+      color: var(--agro-amber);
+    }
+
+    .icon-blue {
+      background: #E6F2F7;
+      color: var(--agro-blue);
+    }
+
+    .icon-green {
+      background: #E4F4EA;
+      color: var(--agro-green);
+    }
+
+    .card h3 {
+      font-family: var(--font-display);
+      font-size: clamp(1.35rem, 1.7vw, 1.85rem);
+      font-weight: 800;
+      color: var(--text-main);
+      line-height: 1.2;
+    }
+
+    .card p,
+    .card li {
+      font-size: clamp(1.1rem, 1.32vw, 1.42rem);
+      line-height: 1.48;
+      color: var(--text-muted);
+    }
+
+    .card ul {
+      padding-left: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .highlight-banner {
+      background: linear-gradient(90deg, #1C3326 0%, #244734 100%);
+      color: #EDF2EC;
+      border-radius: 16px;
+      padding: 24px 32px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      box-shadow: 0 10px 28px rgba(20, 40, 29, 0.14);
+    }
+
+    .highlight-banner .tag {
+      font-family: var(--font-mono);
+      font-size: clamp(0.88rem, 1vw, 1.05rem);
+      font-weight: 700;
+      text-transform: uppercase;
+      background: rgba(75, 174, 116, 0.22);
+      color: #8DE0AE;
+      border: 1px solid rgba(75, 174, 116, 0.45);
+      padding: 10px 16px;
+      border-radius: 10px;
+      white-space: nowrap;
+    }
+
+    .highlight-banner p {
+      font-size: clamp(1.18rem, 1.45vw, 1.55rem);
+      line-height: 1.45;
+      color: #EDF2EC;
+    }
+
+    code {
+      font-family: var(--font-mono);
+      font-size: 0.88em;
+      background: #E8F0EA;
+      color: #164E30;
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+
+    /* Slide 3 layout */
+    .split-solution {
+      display: grid;
+      grid-template-columns: 0.95fr 1.25fr;
+      gap: 28px;
+      align-items: stretch;
+      height: 100%;
+    }
+
+    .solution-hero {
+      background: linear-gradient(155deg, #162E21 0%, #1F6E43 100%);
+      color: #FFFFFF;
+      border-radius: 20px;
+      padding: 34px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .solution-hero .kicker {
+      font-family: var(--font-mono);
+      font-size: clamp(0.88rem, 1vw, 1.05rem);
+      color: #8DE0AE;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .solution-hero h3 {
+      font-family: var(--font-display);
+      font-size: clamp(1.55rem, 2.1vw, 2.25rem);
+      font-weight: 800;
+      line-height: 1.22;
+      margin-top: 10px;
+    }
+
+    .solution-hero p {
+      font-size: clamp(1.12rem, 1.35vw, 1.45rem);
+      line-height: 1.5;
+      color: #DCECE1;
+    }
+
+    .stat-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .mini-stat {
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 14px;
+      padding: 14px 12px;
+      text-align: center;
+    }
+
+    .mini-stat strong {
+      display: block;
+      font-family: var(--font-display);
+      font-size: clamp(1.6rem, 2.2vw, 2.2rem);
+      color: #8DE0AE;
+    }
+
+    .mini-stat span {
+      font-size: clamp(0.88rem, 1vw, 1.05rem);
+      color: #DCECE1;
+    }
+
+    .sources-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      justify-content: space-between;
+    }
+
+    .source-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 6px solid var(--agro-green);
+      border-radius: 16px;
+      padding: 22px 26px;
+      display: flex;
+      align-items: flex-start;
+      gap: 18px;
+      flex: 1;
+    }
+
+    .source-item.amber {
+      border-left-color: var(--agro-amber);
+    }
+
+    .source-item.blue {
+      border-left-color: var(--agro-blue);
+    }
+
+    .source-badge {
+      font-family: var(--font-mono);
+      font-size: clamp(0.86rem, 0.98vw, 1.02rem);
+      font-weight: 700;
+      padding: 7px 13px;
+      border-radius: 8px;
+      background: #E8F3EC;
+      color: var(--agro-green);
+      white-space: nowrap;
+      margin-top: 2px;
+    }
+
+    .source-item.amber .source-badge {
+      background: #FDF3E2;
+      color: #9C610B;
+    }
+
+    .source-item.blue .source-badge {
+      background: #E6F2F7;
+      color: var(--agro-blue);
+    }
+
+    .source-item h4 {
+      font-family: var(--font-display);
+      font-size: clamp(1.22rem, 1.5vw, 1.58rem);
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .source-item p {
+      font-size: clamp(1.04rem, 1.24vw, 1.32rem);
+      line-height: 1.45;
+      color: var(--text-muted);
+    }
+
+    /* Slide 4 - 4 Pilares */
+    .flow-diagram-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px 24px;
+    }
+
+    .pillars-flow {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      align-items: stretch;
+      flex: 1;
+    }
+
+    .pillar-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 24px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 0 8px 20px rgba(20, 40, 29, 0.04);
+    }
+
+    .pillar-num {
+      font-family: var(--font-mono);
+      font-size: clamp(0.86rem, 0.98vw, 1rem);
+      font-weight: 700;
+      color: #FFFFFF;
+      background: var(--agro-green);
+      padding: 5px 14px;
+      border-radius: 999px;
+      align-self: flex-start;
+    }
+
+    .pillar-card:nth-child(2) .pillar-num {
+      background: var(--agro-blue);
+    }
+
+    .pillar-card:nth-child(3) .pillar-num {
+      background: var(--agro-amber);
+    }
+
+    .pillar-card:nth-child(4) .pillar-num {
+      background: #2F7A78;
+    }
+
+    .pillar-card h3 {
+      font-family: var(--font-display);
+      font-size: clamp(1.25rem, 1.55vw, 1.62rem);
+      font-weight: 800;
+      color: var(--text-main);
+      line-height: 1.2;
+    }
+
+    .pillar-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .pillar-list li {
+      font-size: clamp(1.02rem, 1.22vw, 1.3rem);
+      line-height: 1.42;
+      color: var(--text-muted);
+      padding-left: 18px;
+      position: relative;
+    }
+
+    .pillar-list li::before {
+      content: "›";
+      position: absolute;
+      left: 0;
+      color: var(--agro-green);
+      font-weight: 800;
+      font-size: 1.2em;
+    }
+
+    /* Slide 5 - Modelagem do Grafo */
+    .graph-layout {
+      display: grid;
+      grid-template-columns: 1.32fr 0.92fr;
+      gap: 26px;
+      align-items: stretch;
+      height: 100%;
+    }
+
+    .schema-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 22px 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .schema-title {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: clamp(1.1rem, 1.35vw, 1.4rem);
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    /* Slide 6 - Avaliação */
+    .eval-layout {
+      display: grid;
+      grid-template-columns: 0.88fr 1.32fr;
+      gap: 26px;
+      align-items: stretch;
+      height: 100%;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      flex: 1;
+    }
+
+    .kpi-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px 22px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .kpi-box .kpi-val {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 2.9vw, 3rem);
+      font-weight: 800;
+      color: var(--agro-green);
+      line-height: 1.08;
+    }
+
+    .kpi-box .kpi-label {
+      font-size: clamp(0.95rem, 1.12vw, 1.18rem);
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-top: 8px;
+      line-height: 1.35;
+    }
+
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 20px 24px;
+      box-shadow: 0 8px 24px rgba(20, 40, 29, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Slide 7 - Demo & Conclusão */
+    .demo-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      justify-content: center;
+    }
+
+    .demo-heading {
+      font-family: var(--font-display);
+      font-size: clamp(1.3rem, 1.65vw, 1.75rem);
+      font-weight: 800;
+      color: var(--agro-green);
+    }
+
+    .demo-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 24px 26px;
+      flex: 1;
+    }
+
+    .step-circle {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: var(--agro-green);
+      color: #FFFFFF;
+      font-family: var(--font-display);
+      font-size: 1.35rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .demo-step h4 {
+      font-family: var(--font-display);
+      font-size: clamp(1.2rem, 1.5vw, 1.58rem);
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .demo-step p {
+      font-size: clamp(1.06rem, 1.28vw, 1.38rem);
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+
+    /* Barra de progresso fininha no rodapé */
+    .progress-track {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 5px;
+      background: rgba(20, 40, 29, 0.16);
+      z-index: 60;
+      pointer-events: none;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 14.2857%;
+      background: linear-gradient(90deg, var(--agro-green), var(--agro-leaf));
+      transition: width 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    @media (max-width: 1080px) {
+      .slide {
+        padding: 24px 28px 24px;
+      }
+
+      .grid-3,
+      .pillars-flow,
+      .split-solution,
+      .graph-layout,
+      .eval-layout,
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="deck" id="deck" aria-live="polite">
+
+    <!-- SLIDE 1: CAPA -->
+    <section class="slide slide-cover active" data-slide="1" aria-label="Slide 1 — Capa">
+      <svg class="cover-bg-svg" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <g stroke="#4BAE74" stroke-width="1.4" fill="none" opacity="0.55">
+          <path d="M840 110 L980 210 L1110 140 L1040 320 L890 290 Z" />
+          <path d="M980 210 L1040 320 L1160 430 L960 470 L890 290" />
+          <path d="M760 250 L890 290 L820 440 L960 470" />
+          <path d="M120 560 C260 510, 390 620, 540 560" />
+          <path d="M60 610 C220 550, 380 650, 620 590" />
+        </g>
+        <g fill="#4BAE74">
+          <circle cx="840" cy="110" r="6" />
+          <circle cx="980" cy="210" r="8" />
+          <circle cx="1110" cy="140" r="6" />
+          <circle cx="1040" cy="320" r="7" />
+          <circle cx="890" cy="290" r="9" fill="#D48817" />
+          <circle cx="1160" cy="430" r="6" />
+          <circle cx="960" cy="470" r="7" />
+          <circle cx="760" cy="250" r="5" />
+          <circle cx="820" cy="440" r="6" />
+        </g>
+      </svg>
+
+      <div class="cover-top">
+        <div class="brand-pill">
+          <svg width="34" height="34" viewBox="0 0 36 36" fill="none" aria-hidden="true">
+            <rect x="2" y="2" width="32" height="32" rx="8" fill="#1F6E43" />
+            <path d="M10 25C10 16 16 10 25 10C25 19 19 25 10 25Z" fill="#FFFFFF" fill-opacity="0.14" stroke="#FFFFFF"
+              stroke-width="1.6" stroke-linejoin="round" />
+            <line x1="11" y1="24" x2="20" y2="15" stroke="#FFFFFF" stroke-width="1.4" stroke-linecap="round" />
+            <circle cx="11" cy="24" r="2.1" fill="#FFFFFF" />
+            <circle cx="20" cy="15" r="2.1" fill="#A7DAB9" />
+          </svg>
+          <span>AGROGRAPH INTELLIGENCE</span>
+        </div>
+        <div class="date-pill">16/11/2026</div>
+      </div>
+
+      <div class="cover-center">
+        <span class="cover-kicker">Inteligência Agrícola &amp; Fundiária</span>
+        <h1 class="cover-title">
+          AgroGraph Intelligence: Sistema <span class="accent">GraphRAG &amp; KAG</span> para Inteligência Agrícola e
+          Fundiária
+        </h1>
+        <p class="cover-subtitle">
+          Disciplina <em>Tendências em Ciência da Computação</em><br />
+          Prof. Ricardo Roberto de Lima
+        </p>
+      </div>
+
+      <div class="cover-footer">
+        <div class="team-block">
+          <div class="label">Integrantes</div>
+          <div class="team-chips">
+            <span class="team-chip">João Gabriel</span>
+            <span class="team-chip">Júlio César</span>
+            <span class="team-chip">Heitor Mamede</span>
+            <span class="team-chip">Mateus Ieno</span>
+            <span class="team-chip">Perilo Oliveira</span>
+          </div>
+        </div>
+        <a class="repo-link" href="https://github.com/Perilocc/AgroGraphRAG.git" target="_blank" rel="noopener">
+          <span>github.com/Perilocc/AgroGraphRAG.git</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- SLIDE 2: O PROBLEMA -->
+    <section class="slide" data-slide="2" aria-label="Slide 2 — O Problema">
+      <header class="slide-header">
+        <div class="header-left">
+          <h2 class="slide-title">O Problema: Limitações de LLMs e RAG Vetorial Puro</h2>
+        </div>
+        <div class="header-brand" aria-label="AgroGraph Intelligence">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 40" width="176" height="34" fill="none">
+            <rect x="2" y="4" width="32" height="32" rx="8" fill="#1C3326" stroke="#4BAE74" stroke-opacity="0.6"
+              stroke-width="1.25" />
+            <path d="M11 26C11 17 17 11 26 11C26 20 20 26 11 26Z" fill="#4BAE74" fill-opacity="0.14" stroke="#EDF2EC"
+              stroke-width="1.5" stroke-linejoin="round" />
+            <line x1="12" y1="25" x2="21" y2="16" stroke="#EDF2EC" stroke-width="1.3" stroke-linecap="round" />
+            <circle cx="12" cy="25" r="2" fill="#EDF2EC" />
+            <circle cx="21" cy="16" r="2" fill="#4BAE74" />
+            <text x="44" y="20" font-family="Plus Jakarta Sans, Inter, sans-serif" font-size="15" font-weight="700"
+              fill="#14281D">AgroGraph</text>
+            <text x="44" y="33" font-family="Inter, sans-serif" font-size="10" font-weight="600"
+              fill="#455C4E">INTELLIGENCE</text>
+          </svg>
+        </div>
+      </header>
+
+      <div class="slide-body">
+        <div class="grid-3">
+          <article class="card card-red-top">
+            <div class="card-icon icon-red">!</div>
+            <h3>Alucinações</h3>
+            <p>LLMs sem ancoragem estrutural geram respostas fluentes e plausíveis, porém <strong>sem evidência
+                verificável</strong> nos dados reais do domínio.</p>
+          </article>
+
+          <article class="card card-amber-top">
+            <div class="card-icon icon-amber">⇄</div>
+            <h3>Falha em Raciocínio <em>Multi-hop</em></h3>
+            <p>Buscas puramente por similaridade de texto (RAG vetorial) fragmentam o contexto e não conectam entidades
+              dispersas em fontes heterogêneas.</p>
+          </article>
+
+          <article class="card card-blue-top">
+            <div class="card-icon icon-blue">⌖</div>
+            <h3>Falta de Rastreabilidade</h3>
+            <p>O usuário não consegue auditar <strong>de onde veio a resposta</strong>, quais documentos sustentam a
+              afirmação nem quais relações foram percorridas.</p>
+          </article>
+        </div>
+
+        <div
+          style="background: var(--surface); border: 1px solid var(--border); border-left: 5px solid var(--agro-green); border-radius: 14px; padding: 22px 28px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 6px 20px rgba(20, 40, 29, 0.04);">
+          <span
+            style="font-family: var(--font-display); font-size: clamp(1.05rem, 1.25vw, 1.3rem); font-weight: 800; color: var(--agro-green);">Desafio
+            no Domínio</span>
+          <p style="font-size: clamp(1.12rem, 1.35vw, 1.45rem); line-height: 1.45; color: var(--text-main);">
+            Integrar dados cadastrais rurais (SNCR/INCRA), séries de produção agrícola municipal (IBGE PAM) e
+            recomendações técnicas da Embrapa na Paraíba, garantindo precisão e rastreabilidade nas respostas.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 3: A SOLUÇÃO PROPOSTA & FONTES INTEGRADAS -->
+    <section class="slide" data-slide="3" aria-label="Slide 3 — A Solução Proposta e Fontes Integradas">
+      <header class="slide-header">
+        <div class="header-left">
+          <h2 class="slide-title">A Solução Proposta &amp; 3 Fontes Conectadas (Paraíba)</h2>
+        </div>
+        <div class="header-brand" aria-label="AgroGraph Intelligence">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 40" width="176" height="34" fill="none">
+            <rect x="2" y="4" width="32" height="32" rx="8" fill="#1C3326" stroke="#4BAE74" stroke-opacity="0.6"
+              stroke-width="1.25" />
+            <path d="M11 26C11 17 17 11 26 11C26 20 20 26 11 26Z" fill="#4BAE74" fill-opacity="0.14" stroke="#EDF2EC"
+              stroke-width="1.5" stroke-linejoin="round" />
+            <line x1="12" y1="25" x2="21" y2="16" stroke="#EDF2EC" stroke-width="1.3" stroke-linecap="round" />
+            <circle cx="12" cy="25" r="2" fill="#EDF2EC" />
+            <circle cx="21" cy="16" r="2" fill="#4BAE74" />
+            <text x="44" y="20" font-family="Plus Jakarta Sans, Inter, sans-serif" font-size="15" font-weight="700"
+              fill="#14281D">AgroGraph</text>
+            <text x="44" y="33" font-family="Inter, sans-serif" font-size="10" font-weight="600"
+              fill="#455C4E">INTELLIGENCE</text>
+          </svg>
+        </div>
+      </header>
+
+      <div class="slide-body">
+        <div class="split-solution">
+          <div class="solution-hero">
+            <div>
+              <span class="kicker">Ancoragem Estrutural</span>
+              <h3>Grafo de Conhecimento (Neo4j LPG) + Busca Vetorial + Algoritmos de Grafo</h3>
+            </div>
+            <p>
+              <strong>KAG (Knowledge Augmented Generation):</strong> além da busca vetorial, integra ontologia,
+              travessia multi-hop e algoritmos de grafo sobre <code>gpt-6-luna</code> e
+              <code>text-embedding-3-small</code>.
+            </p>
+            <div class="stat-row">
+              <div class="mini-stat">
+                <strong>3</strong>
+                <span>Fontes PB</span>
+              </div>
+              <div class="mini-stat">
+                <strong>219+</strong>
+                <span>Municípios</span>
+              </div>
+              <div class="mini-stat">
+                <strong>1536d</strong>
+                <span>Embeddings</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="sources-stack">
+            <div class="source-item">
+              <span class="source-badge">SNCR / INCRA (CSV)</span>
+              <div>
+                <h4>Núcleo Fundiário da Paraíba</h4>
+                <p>Imóveis rurais, municípios e detentores. Amostragem uniforme <strong>1/6</strong>
+                  (<code>sample_step = 6</code> sobre 237.023 registros) para respeitar o teto de 200 mil nós do
+                  <strong>Neo4j Aura Free</strong>.
+                </p>
+              </div>
+            </div>
+
+            <div class="source-item amber">
+              <span class="source-badge">IBGE PAM (CSV)</span>
+              <div>
+                <h4>Ponte Agrícola Municipal</h4>
+                <p>Séries de <strong>área plantada (ha)</strong> e <strong>quantidade produzida (ton)</strong> por
+                  município e cultura agrícola, conectando território fundiário e agronomia.</p>
+              </div>
+            </div>
+
+            <div class="source-item blue">
+              <span class="source-badge">Embrapa (5 PDFs)</span>
+              <div>
+                <h4>Conhecimento Técnico Não Estruturado</h4>
+                <p>Manuais técnicos de <strong>soja, milho e manejo integrado de pragas</strong> extraídos em entidades,
+                  relações e trechos rastreáveis.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 4: ARQUITETURA DOS 4 PILARES -->
+    <section class="slide" data-slide="4" aria-label="Slide 4 — Arquitetura dos 4 Pilares">
+      <header class="slide-header">
+        <div class="header-left">
+          <h2 class="slide-title">Arquitetura dos 4 Pilares</h2>
+        </div>
+        <div class="header-brand" aria-label="AgroGraph Intelligence">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 40" width="176" height="34" fill="none">
+            <rect x="2" y="4" width="32" height="32" rx="8" fill="#1C3326" stroke="#4BAE74" stroke-opacity="0.6"
+              stroke-width="1.25" />
+            <path d="M11 26C11 17 17 11 26 11C26 20 20 26 11 26Z" fill="#4BAE74" fill-opacity="0.14" stroke="#EDF2EC"
+              stroke-width="1.5" stroke-linejoin="round" />
+            <line x1="12" y1="25" x2="21" y2="16" stroke="#EDF2EC" stroke-width="1.3" stroke-linecap="round" />
+            <circle cx="12" cy="25" r="2" fill="#EDF2EC" />
+            <circle cx="21" cy="16" r="2" fill="#4BAE74" />
+            <text x="44" y="20" font-family="Plus Jakarta Sans, Inter, sans-serif" font-size="15" font-weight="700"
+              fill="#14281D">AgroGraph</text>
+            <text x="44" y="33" font-family="Inter, sans-serif" font-size="10" font-weight="600"
+              fill="#455C4E">INTELLIGENCE</text>
+          </svg>
+        </div>
+      </header>
+
+      <div class="slide-body">
+        <div class="pillars-flow">
+          <article class="pillar-card">
+            <span class="pillar-num">Pilar 1</span>
+            <h3>Text-to-Graph &amp; ETL</h3>
+            <ul class="pillar-list">
+              <li>Extração NER/RE via LLM sobre os manuais da Embrapa.</li>
+              <li><strong>Entity Resolution em 2 camadas:</strong> dicionário de sinônimos + cosseno/LLM.</li>
+              <li>Deduplicação segura de detentores mascarados do SNCR.</li>
+            </ul>
+          </article>
+
+          <article class="pillar-card">
+            <span class="pillar-num">Pilar 2</span>
+            <h3>Neo4j LPG Store</h3>
+            <ul class="pillar-list">
+              <li>Labels PascalCase e relações semânticas tipadas.</li>
+              <li>Constraints de unicidade + índices B-Tree / Range.</li>
+              <li>Índices Fulltext e Vector (<code>1536d</code>, cosseno).</li>
+            </ul>
+          </article>
+
+          <article class="pillar-card">
+            <span class="pillar-num">Pilar 3</span>
+            <h3>Recuperação Híbrida &amp; KAG</h3>
+            <ul class="pillar-list">
+              <li>Vector + Fulltext + travessia <em>multi-hop</em> anti-hub.</li>
+              <li>Text-to-Cypher <em>read-only</em> com <code>EXPLAIN</code>, regex e timeout.</li>
+              <li><strong>PageRank, Louvain e Shortest Path</strong> no subgrafo agronômico.</li>
+            </ul>
+          </article>
+
+          <article class="pillar-card">
+            <span class="pillar-num">Pilar 4</span>
+            <h3>Interface &amp; Provenance</h3>
+            <ul class="pillar-list">
+              <li>Aplicação multipágina em <strong>Streamlit</strong>.</li>
+              <li>Subgrafo interativo <strong>PyVis</strong> sincronizado com a paleta.</li>
+              <li>Exibição de caminhos, Cypher gerada e nível de confiança.</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 5: MODELAGEM DO GRAFO & DECISÕES TÉCNICAS -->
+    <section class="slide" data-slide="5" aria-label="Slide 5 — Modelagem do Grafo e Decisões Técnicas">
+      <header class="slide-header">
+        <div class="header-left">
+          <h2 class="slide-title">Modelagem do Grafo &amp; Decisões Técnicas</h2>
+        </div>
+        <div class="header-brand" aria-label="AgroGraph Intelligence">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 40" width="176" height="34" fill="none">
+            <rect x="2" y="4" width="32" height="32" rx="8" fill="#1C3326" stroke="#4BAE74" stroke-opacity="0.6"
+              stroke-width="1.25" />
+            <path d="M11 26C11 17 17 11 26 11C26 20 20 26 11 26Z" fill="#4BAE74" fill-opacity="0.14" stroke="#EDF2EC"
+              stroke-width="1.5" stroke-linejoin="round" />
+            <line x1="12" y1="25" x2="21" y2="16" stroke="#EDF2EC" stroke-width="1.3" stroke-linecap="round" />
+            <circle cx="12" cy="25" r="2" fill="#EDF2EC" />
+            <circle cx="21" cy="16" r="2" fill="#4BAE74" />
+            <text x="44" y="20" font-family="Plus Jakarta Sans, Inter, sans-serif" font-size="15" font-weight="700"
+              fill="#14281D">AgroGraph</text>
+            <text x="44" y="33" font-family="Inter, sans-serif" font-size="10" font-weight="600"
+              fill="#455C4E">INTELLIGENCE</text>
+          </svg>
+        </div>
+      </header>
+
+      <div class="slide-body">
+        <div class="graph-layout">
+          <div class="schema-panel">
+            <div class="schema-title">Esquema Unificado no Neo4j (LPG)</div>
+            <svg viewBox="0 0 640 340" width="100%" height="100%" aria-label="Esquema unificado do grafo Neo4j">
+              <defs>
+                <marker id="g-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6"
+                  orient="auto">
+                  <path d="M 0 1 L 10 5 L 0 9 z" fill="#5B6B5E" />
+                </marker>
+              </defs>
+
+              <!-- Zonas de domínio -->
+              <rect x="8" y="10" width="210" height="320" rx="12" fill="#F0F7F2" stroke="#CBE2D1"
+                stroke-dasharray="5 4" />
+              <text x="20" y="30" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700"
+                fill="#1F6E43">SNCR (FUNDIÁRIO)</text>
+
+              <rect x="228" y="10" width="174" height="175" rx="12" fill="#FDF8EE" stroke="#EED9B3"
+                stroke-dasharray="5 4" />
+              <text x="240" y="30" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700"
+                fill="#9C610B">IBGE PAM (PONTE)</text>
+
+              <rect x="412" y="10" width="220" height="320" rx="12" fill="#F2F6FA" stroke="#CBDCEB"
+                stroke-dasharray="5 4" />
+              <text x="424" y="30" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700"
+                fill="#1E6B8C">EMBRAPA (AGRONÔMICO)</text>
+
+              <!-- Arestas -->
+              <line x1="112" y1="108" x2="245" y2="108" stroke="#5B6B5E" stroke-width="2" marker-end="url(#g-arrow)" />
+              <text x="178" y="99" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10"
+                fill="#3B473D">LOCALIZADO_EM</text>
+
+              <line x1="112" y1="138" x2="112" y2="195" stroke="#5B6B5E" stroke-width="2" marker-end="url(#g-arrow)" />
+              <text x="118" y="172" font-family="JetBrains Mono, monospace" font-size="9.5"
+                fill="#3B473D">POSSUI_DETENCAO</text>
+
+              <line x1="112" y1="242" x2="112" y2="275" stroke="#5B6B5E" stroke-width="2" marker-end="url(#g-arrow)" />
+
+              <line x1="358" y1="108" x2="438" y2="108" stroke="#9C610B" stroke-width="2.2"
+                marker-end="url(#g-arrow)" />
+              <text x="398" y="99" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10.5"
+                font-weight="700" fill="#9C610B">PRODUZ</text>
+
+              <line x1="520" y1="136" x2="520" y2="178" stroke="#5B6B5E" stroke-width="2" marker-end="url(#g-arrow)" />
+              <text x="526" y="162" font-family="JetBrains Mono, monospace" font-size="9.5" fill="#3B473D">AFETA /
+                CONTROLA</text>
+
+              <line x1="520" y1="224" x2="520" y2="255" stroke="#5B6B5E" stroke-width="2" marker-end="url(#g-arrow)" />
+              <text x="526" y="244" font-family="JetBrains Mono, monospace" font-size="9.5"
+                fill="#3B473D">EXTRAIDO_DE</text>
+
+              <line x1="365" y1="285" x2="466" y2="285" stroke="#5B6B5E" stroke-width="2" marker-end="url(#g-arrow)" />
+              <text x="416" y="276" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10.5"
+                fill="#3B473D">CONTEM</text>
+
+              <!-- Nós (cores do ui/theme.py) -->
+              <rect x="28" y="84" width="110" height="48" rx="10" fill="#1F6E43" stroke="#144A2C" stroke-width="2" />
+              <text x="83" y="113" text-anchor="middle" font-family="Plus Jakarta Sans, sans-serif" font-size="12.5"
+                font-weight="700" fill="#FFFFFF">ImovelRural</text>
+
+              <rect x="46" y="198" width="132" height="40" rx="9" fill="#6B7280" stroke="#4B5563" stroke-width="1.5" />
+              <text x="112" y="223" text-anchor="middle" font-family="Plus Jakarta Sans, sans-serif" font-size="11.5"
+                font-weight="700" fill="#FFFFFF">RegistroDetencao</text>
+
+              <rect x="56" y="278" width="112" height="38" rx="9" fill="#5B6B5E" stroke="#3B473D" stroke-width="1.5" />
+              <text x="112" y="302" text-anchor="middle" font-family="Plus Jakarta Sans, sans-serif" font-size="12"
+                font-weight="700" fill="#FFFFFF">Detentor</text>
+
+              <rect x="248" y="84" width="110" height="48" rx="10" fill="#1E6B8C" stroke="#13485F" stroke-width="2" />
+              <text x="303" y="113" text-anchor="middle" font-family="Plus Jakarta Sans, sans-serif" font-size="12.5"
+                font-weight="700" fill="#FFFFFF">Municipio</text>
+
+              <rect x="442" y="84" width="156" height="48" rx="10" fill="#D48817" stroke="#9C610B" stroke-width="2" />
+              <text x="520" y="113" text-anchor="middle" font-family="Plus Jakarta Sans, sans-serif" font-size="12.5"
+                font-weight="700" fill="#FFFFFF">CulturaAgricola</text>
+
+              <rect x="430" y="180" width="84" height="42" rx="9" fill="#C0392B" stroke="#8E281E" stroke-width="1.5" />
+              <text x="472" y="206" text-anchor="middle" font-family="Plus Jakarta Sans, sans-serif" font-size="12"
+                font-weight="700" fill="#FFFFFF">Praga</text>
+
+              <rect x="522" y="180" width="98" height="42" rx="9" fill="#2E8B57" stroke="#1E5E3A" stroke-width="1.5" />
+              <text x="571" y="206" text-anchor="middle" font-family="Plus Jakarta Sans, sans-serif" font-size="11"
+                font-weight="700" fill="#FFFFFF">PraticaAgricola</text>
+
+              <rect x="470" y="258" width="100" height="42" rx="9" fill="#94A3B8" stroke="#64748B" stroke-width="1.5" />
+              <text x="520" y="284" text-anchor="middle" font-family="Plus Jakarta Sans, sans-serif" font-size="12"
+                font-weight="700" fill="#FFFFFF">Trecho</text>
+
+              <rect x="255" y="258" width="108" height="42" rx="9" fill="#64748B" stroke="#475569" stroke-width="1.5" />
+              <text x="309" y="284" text-anchor="middle" font-family="Plus Jakarta Sans, sans-serif" font-size="12"
+                font-weight="700" fill="#FFFFFF">Documento</text>
+            </svg>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:20px; justify-content:center;">
+            <article class="card card-amber-top">
+              <div class="card-icon icon-amber">🛡</div>
+              <h3>Proteção Anti-Hub</h3>
+              <p>
+                Travessias <em>multi-hop</em>, PageRank, Louvain e <code>SHORTEST 1</code> isolam o subgrafo agronômico,
+                excluindo <code>ImovelRural</code>, <code>RegistroDetencao</code>, <code>Detentor</code>,
+                <code>Trecho</code> e <code>Documento</code>, para evitar explosão combinatória em municípios com
+                milhares de imóveis.
+              </p>
+            </article>
+
+            <article class="card card-accent-top">
+              <div class="card-icon icon-green">✓</div>
+              <h3>Grounding Obrigatório</h3>
+              <p>
+                O LLM recebe contexto estruturado com instruções rígidas para responder <strong>somente citando
+                  caminhos, nós e trechos recuperados</strong>, reduzindo alucinações a zero no benchmark.
+              </p>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 6: AVALIAÇÃO — MITIGAÇÃO DE ALUCINAÇÕES -->
+    <section class="slide" data-slide="6" aria-label="Slide 6 — Avaliação: Mitigação de Alucinações">
+      <header class="slide-header">
+        <div class="header-left">
+          <h2 class="slide-title">Avaliação: Mitigação de Alucinações</h2>
+        </div>
+        <div class="header-brand" aria-label="AgroGraph Intelligence">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 40" width="176" height="34" fill="none">
+            <rect x="2" y="4" width="32" height="32" rx="8" fill="#1C3326" stroke="#4BAE74" stroke-opacity="0.6"
+              stroke-width="1.25" />
+            <path d="M11 26C11 17 17 11 26 11C26 20 20 26 11 26Z" fill="#4BAE74" fill-opacity="0.14" stroke="#EDF2EC"
+              stroke-width="1.5" stroke-linejoin="round" />
+            <line x1="12" y1="25" x2="21" y2="16" stroke="#EDF2EC" stroke-width="1.3" stroke-linecap="round" />
+            <circle cx="12" cy="25" r="2" fill="#EDF2EC" />
+            <circle cx="21" cy="16" r="2" fill="#4BAE74" />
+            <text x="44" y="20" font-family="Plus Jakarta Sans, Inter, sans-serif" font-size="15" font-weight="700"
+              fill="#14281D">AgroGraph</text>
+            <text x="44" y="33" font-family="Inter, sans-serif" font-size="10" font-weight="600"
+              fill="#455C4E">INTELLIGENCE</text>
+          </svg>
+        </div>
+      </header>
+
+      <div class="slide-body">
+        <div class="eval-layout">
+          <div style="display:flex; flex-direction:column; gap:18px;">
+            <article class="card">
+              <h3>Metodologia (<code>evaluation/benchmark.py</code>)</h3>
+              <p>
+                12 perguntas multi-domínio avaliando 3 modos: <code>no_context</code>, <code>vector</code> e
+                <code>hybrid</code>. Fidelidade via LLM-as-judge (<code>gpt-6-luna</code>), citação
+                e
+                recall por verificação estrutural (amostra limitada a <code>n=12</code>).
+              </p>
+            </article>
+
+            <div class="kpi-grid">
+              <div class="kpi-box">
+                <div class="kpi-val">+26,39 p.p.</div>
+                <div class="kpi-label">Entity Recall vs. baseline (83,33% vs. 56,94%)</div>
+              </div>
+              <div class="kpi-box">
+                <div class="kpi-val">+16,66 p.p.</div>
+                <div class="kpi-label">Citation Score vs. baseline (58,33% vs. 41,67%)</div>
+              </div>
+              <div class="kpi-box">
+                <div class="kpi-val">100%</div>
+                <div class="kpi-label">Faithfulness em ambos com contexto (vs. 16,67% sem)</div>
+              </div>
+              <div class="kpi-box">
+                <div class="kpi-val">61,71%</div>
+                <div class="kpi-label">Confiança Média (+12,12 p.p. vs. vector)</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <svg viewBox="0 0 680 390" width="100%" height="100%" role="img"
+              aria-label="Gráfico comparativo dos modos no_context, vector e hybrid">
+              <text x="16" y="26" font-family="Plus Jakarta Sans, sans-serif" font-size="16" font-weight="800"
+                fill="#14281D">Comparativo dos 3 Modos (evaluation/resultados_comparativos.md)</text>
+
+              <!-- Legenda -->
+              <g transform="translate(16, 44)">
+                <rect x="0" y="0" width="13" height="13" rx="3" fill="#94A3B8" />
+                <text x="19" y="11" font-family="Inter, sans-serif" font-size="12.5" font-weight="600"
+                  fill="#31483A">no_context</text>
+
+                <rect x="118" y="0" width="13" height="13" rx="3" fill="#D48817" />
+                <text x="137" y="11" font-family="Inter, sans-serif" font-size="12.5" font-weight="600"
+                  fill="#31483A">vector (baseline)</text>
+
+                <rect x="268" y="0" width="13" height="13" rx="3" fill="#1F6E43" />
+                <text x="287" y="11" font-family="Inter, sans-serif" font-size="12.5" font-weight="700"
+                  fill="#1F6E43">hybrid (GraphRAG &amp; KAG)</text>
+              </g>
+
+              <!-- Grid: y=82..322 (h=240 => 2.4px por 1%) -->
+              <line x1="54" y1="322" x2="660" y2="322" stroke="#9DB3A4" stroke-width="1.5" />
+              <text x="45" y="326" text-anchor="end" font-family="Inter, sans-serif" font-size="12"
+                fill="#455C4E">0%</text>
+
+              <line x1="54" y1="262" x2="660" y2="262" stroke="#E3ECE5" stroke-dasharray="4 4" />
+              <text x="45" y="266" text-anchor="end" font-family="Inter, sans-serif" font-size="12"
+                fill="#455C4E">25%</text>
+
+              <line x1="54" y1="202" x2="660" y2="202" stroke="#E3ECE5" stroke-dasharray="4 4" />
+              <text x="45" y="206" text-anchor="end" font-family="Inter, sans-serif" font-size="12"
+                fill="#455C4E">50%</text>
+
+              <line x1="54" y1="142" x2="660" y2="142" stroke="#E3ECE5" stroke-dasharray="4 4" />
+              <text x="45" y="146" text-anchor="end" font-family="Inter, sans-serif" font-size="12"
+                fill="#455C4E">75%</text>
+
+              <line x1="54" y1="82" x2="660" y2="82" stroke="#E3ECE5" stroke-dasharray="4 4" />
+              <text x="45" y="86" text-anchor="end" font-family="Inter, sans-serif" font-size="12"
+                fill="#455C4E">100%</text>
+
+              <!-- Grupo 1: Faithfulness (16.67%, 100%, 100%) -->
+              <g transform="translate(80, 0)">
+                <rect x="0" y="282.0" width="28" height="40.0" rx="4" fill="#94A3B8" />
+                <text x="14" y="275" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11"
+                  font-weight="700" fill="#14281D">16,7%</text>
+
+                <rect x="34" y="82.0" width="28" height="240.0" rx="4" fill="#D48817" />
+                <text x="48" y="75" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11"
+                  font-weight="700" fill="#14281D">100%</text>
+
+                <rect x="68" y="82.0" width="28" height="240.0" rx="4" fill="#1F6E43" />
+                <text x="82" y="75" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11"
+                  font-weight="700" fill="#1F6E43">100%</text>
+
+                <text x="48" y="348" text-anchor="middle" font-family="Plus Jakarta Sans, sans-serif" font-size="13"
+                  font-weight="800" fill="#14281D">Faithfulness</text>
+              </g>
+
+              <!-- Grupo 2: Entity Recall (81.94%, 56.94%, 83.33%) -->
+              <g transform="translate(232, 0)">
+                <rect x="0" y="125.3" width="28" height="196.7" rx="4" fill="#94A3B8" />
+                <text x="14" y="118" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11"
+                  font-weight="700" fill="#14281D">81,9%</text>
+
+                <rect x="34" y="185.3" width="28" height="136.7" rx="4" fill="#D48817" />
+                <text x="48" y="178" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11"
+                  font-weight="700" fill="#14281D">56,9%</text>
+
+                <rect x="68" y="122.0" width="28" height="200.0" rx="4" fill="#1F6E43" />
+                <text x="82" y="115" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11"
+                  font-weight="700" fill="#1F6E43">83,3%</text>
+
+                <text x="48" y="348" text-anchor="middle" font-family="Plus Jakarta Sans, sans-serif" font-size="13"
+                  font-weight="800" fill="#14281D">Entity Recall</text>
+              </g>
+
+              <!-- Grupo 3: Citation Score (0%, 41.67%, 58.33%) -->
+              <g transform="translate(384, 0)">
+                <rect x="0" y="319" width="28" height="3" rx="1.5" fill="#CBD5E1" />
+                <text x="14" y="312" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11"
+                  font-weight="700" fill="#14281D">0,0%</text>
+
+                <rect x="34" y="222.0" width="28" height="100.0" rx="4" fill="#D48817" />
+                <text x="48" y="215" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11"
+                  font-weight="700" fill="#14281D">41,7%</text>
+
+                <rect x="68" y="182.0" width="28" height="140.0" rx="4" fill="#1F6E43" />
+                <text x="82" y="175" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11"
+                  font-weight="700" fill="#1F6E43">58,3%</text>
+
+                <text x="48" y="348" text-anchor="middle" font-family="Plus Jakarta Sans, sans-serif" font-size="13"
+                  font-weight="800" fill="#14281D">Citation Score</text>
+              </g>
+
+              <!-- Grupo 4: Confiança Média (0%, 49.59%, 61.71%) -->
+              <g transform="translate(536, 0)">
+                <rect x="0" y="319" width="28" height="3" rx="1.5" fill="#CBD5E1" />
+                <text x="14" y="312" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11"
+                  font-weight="700" fill="#14281D">0,0%</text>
+
+                <rect x="34" y="203.0" width="28" height="119.0" rx="4" fill="#D48817" />
+                <text x="48" y="196" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11"
+                  font-weight="700" fill="#14281D">49,6%</text>
+
+                <rect x="68" y="173.9" width="28" height="148.1" rx="4" fill="#1F6E43" />
+                <text x="82" y="167" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11"
+                  font-weight="700" fill="#1F6E43">61,7%</text>
+
+                <text x="48" y="348" text-anchor="middle" font-family="Plus Jakarta Sans, sans-serif" font-size="13"
+                  font-weight="800" fill="#14281D">Confiança Média</text>
+              </g>
+
+              <text x="16" y="380" font-family="Inter, sans-serif" font-size="11" fill="#6C8073">Fonte:
+                evaluation/resultados_comparativos.md (12 perguntas)</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 7: CONCLUSÕES & LIMITAÇÕES -->
+    <section class="slide" data-slide="7" aria-label="Slide 7 — Conclusões e Limitações">
+      <header class="slide-header">
+        <div class="header-left">
+          <h2 class="slide-title">Conclusões &amp; Limitações</h2>
+        </div>
+        <div class="header-brand" aria-label="AgroGraph Intelligence">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 40" width="176" height="34" fill="none">
+            <rect x="2" y="4" width="32" height="32" rx="8" fill="#1C3326" stroke="#4BAE74" stroke-opacity="0.6"
+              stroke-width="1.25" />
+            <path d="M11 26C11 17 17 11 26 11C26 20 20 26 11 26Z" fill="#4BAE74" fill-opacity="0.14" stroke="#EDF2EC"
+              stroke-width="1.5" stroke-linejoin="round" />
+            <line x1="12" y1="25" x2="21" y2="16" stroke="#EDF2EC" stroke-width="1.3" stroke-linecap="round" />
+            <circle cx="12" cy="25" r="2" fill="#EDF2EC" />
+            <circle cx="21" cy="16" r="2" fill="#4BAE74" />
+            <text x="44" y="20" font-family="Plus Jakarta Sans, Inter, sans-serif" font-size="15" font-weight="700"
+              fill="#14281D">AgroGraph</text>
+            <text x="44" y="33" font-family="Inter, sans-serif" font-size="10" font-weight="600"
+              fill="#455C4E">INTELLIGENCE</text>
+          </svg>
+        </div>
+      </header>
+
+      <div class="slide-body">
+        <div class="grid-2">
+          <article class="card card-accent-top">
+            <div class="card-icon icon-green">✓</div>
+            <h3>Conclusões</h3>
+            <ul>
+              <li><strong>Rastreabilidade real:</strong> respostas auditáveis até o nó, relação e trecho de origem no
+                Neo4j.</li>
+              <li><strong>Ganho sobre o baseline vetorial:</strong> +26,39 p.p. em <em>Entity Recall</em> e +16,66 p.p.
+                em citação estrutural.</li>
+              <li><strong>Engenharia segura:</strong> proteção anti-hub e Text-to-Cypher <em>read-only</em> com
+                <code>EXPLAIN</code>.
+              </li>
+            </ul>
+          </article>
+
+          <article class="card card-amber-top">
+            <div class="card-icon icon-amber">⚑</div>
+            <h3>Limitações &amp; Trabalhos Futuros</h3>
+            <ul>
+              <li><strong>Amostra de avaliação (n=12):</strong> expandir o benchmark para dezenas de perguntas
+                multi-hop.</li>
+              <li><strong>Amostragem SNCR (1/6):</strong> migrar do Neo4j Aura Free para instância dedicada com os 237
+                mil imóveis completos.</li>
+              <li><strong>Escopo geográfico:</strong> estender a ontologia e os manuais Embrapa para outros estados do
+                Nordeste.</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 8: AGRADECIMENTO -->
+    <section class="slide slide-cover" data-slide="8" aria-label="Slide 8 — Agradecimento">
+      <svg class="cover-bg-svg" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <g stroke="#4BAE74" stroke-width="1.4" fill="none" opacity="0.55">
+          <path d="M840 110 L980 210 L1110 140 L1040 320 L890 290 Z" />
+          <path d="M980 210 L1040 320 L1160 430 L960 470 L890 290" />
+          <path d="M120 560 C260 510, 390 620, 540 560" />
+        </g>
+        <g fill="#4BAE74">
+          <circle cx="840" cy="110" r="6" />
+          <circle cx="980" cy="210" r="8" />
+          <circle cx="1110" cy="140" r="6" />
+          <circle cx="1040" cy="320" r="7" />
+          <circle cx="890" cy="290" r="9" fill="#D48817" />
+        </g>
+      </svg>
+
+      <div class="cover-top">
+        <div class="brand-pill">
+          <svg width="34" height="34" viewBox="0 0 36 36" fill="none" aria-hidden="true">
+            <rect x="2" y="2" width="32" height="32" rx="8" fill="#1F6E43" />
+            <path d="M10 25C10 16 16 10 25 10C25 19 19 25 10 25Z" fill="#FFFFFF" fill-opacity="0.14" stroke="#FFFFFF"
+              stroke-width="1.6" stroke-linejoin="round" />
+            <line x1="11" y1="24" x2="20" y2="15" stroke="#FFFFFF" stroke-width="1.4" stroke-linecap="round" />
+            <circle cx="11" cy="24" r="2.1" fill="#FFFFFF" />
+            <circle cx="20" cy="15" r="2.1" fill="#A7DAB9" />
+          </svg>
+          <span>AGROGRAPH INTELLIGENCE</span>
+        </div>
+      </div>
+
+      <div class="cover-center" style="text-align:center; max-width:900px; margin:auto;">
+        <h1 class="cover-title" style="font-size:clamp(3.2rem, 5.5vw, 5.2rem); margin-bottom:18px;">
+          Obrigado!
+        </h1>
+        <p class="cover-subtitle" style="margin:0 auto;">
+          AgroGraph Intelligence: GraphRAG &amp; KAG para Inteligência Agrícola e Fundiária
+        </p>
+      </div>
+
+      <div class="cover-footer" style="justify-content:center;">
+        <a class="repo-link" href="https://github.com/Perilocc/AgroGraphRAG.git" target="_blank" rel="noopener">
+          <span>github.com/Perilocc/AgroGraphRAG.git</span>
+        </a>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Linha fina de progressão -->
+  <div class="progress-track" role="progressbar" aria-valuemin="1" aria-valuemax="7" aria-valuenow="1"
+    aria-label="Progresso da apresentação">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+
+  <script>
+    (function () {
+      const slides = Array.from(document.querySelectorAll('.slide'));
+      const total = slides.length;
+      const progressFill = document.getElementById('progressFill');
+      const progressTrack = document.querySelector('.progress-track');
+
+      let current = 0;
+
+      function updateUI() {
+        slides.forEach((slide, idx) => {
+          slide.classList.remove('active', 'prev');
+          if (idx === current) {
+            slide.classList.add('active');
+          } else if (idx < current) {
+            slide.classList.add('prev');
+          }
+        });
+
+        const pct = ((current + 1) / total) * 100;
+        progressFill.style.width = `${pct}%`;
+        progressTrack.setAttribute('aria-valuenow', String(current + 1));
+
+        if (window.location.hash !== `#slide-${current + 1}`) {
+          history.replaceState(null, '', `#slide-${current + 1}`);
+        }
+      }
+
+      function goTo(index) {
+        const clamped = Math.max(0, Math.min(total - 1, index));
+        if (clamped !== current) {
+          current = clamped;
+          updateUI();
+        }
+      }
+
+      function next() { goTo(current + 1); }
+      function prev() { goTo(current - 1); }
+
+      document.addEventListener('keydown', (e) => {
+        if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+        switch (e.key) {
+          case 'ArrowRight':
+          case 'ArrowDown':
+          case 'PageDown':
+          case ' ':
+            e.preventDefault();
+            next();
+            break;
+          case 'ArrowLeft':
+          case 'ArrowUp':
+          case 'PageUp':
+            e.preventDefault();
+            prev();
+            break;
+          case 'Home':
+            e.preventDefault();
+            goTo(0);
+            break;
+          case 'End':
+            e.preventDefault();
+            goTo(total - 1);
+            break;
+          default:
+            if (e.key >= '1' && e.key <= String(total)) {
+              e.preventDefault();
+              goTo(Number(e.key) - 1);
+            }
+        }
+      });
+
+      let touchStartX = null;
+      document.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].clientX;
+      }, { passive: true });
+      document.addEventListener('touchend', (e) => {
+        if (touchStartX === null) return;
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        if (Math.abs(dx) > 45) {
+          dx < 0 ? next() : prev();
+        }
+        touchStartX = null;
+      }, { passive: true });
+
+      const match = window.location.hash.match(/^#slide-(\d+)$/);
+      if (match) {
+        const idx = Number(match[1]) - 1;
+        if (idx >= 0 && idx < total) current = idx;
+      }
+
+      updateUI();
+    })();
+  </script>
+</body>
+
+</html>
